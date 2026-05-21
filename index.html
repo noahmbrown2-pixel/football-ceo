@@ -1082,8 +1082,8 @@ function simulateMatch(homeId, awayId) {
   const hs = getTeamStrength(homeId);
   const as = getTeamStrength(awayId);
   const homeAdvantage = 5;
-  let xgHome = (hs.attack + homeAdvantage - as.defense) / 20 + 1.2 + rand(-0.4, 0.4);
-  let xgAway = (as.attack - hs.defense) / 20 + 0.8 + rand(-0.4, 0.4);
+  let xgHome = (hs.attack + homeAdvantage - as.defense) / 12 + 1.2 + rand(-0.4, 0.4);
+  let xgAway = (as.attack - hs.defense) / 12 + 0.8 + rand(-0.4, 0.4);
   let goalsHome = Math.max(0, Math.round(xgHome + normalRandom()));
   let goalsAway = Math.max(0, Math.round(xgAway + normalRandom()));
   // Pick scorers
@@ -1214,10 +1214,15 @@ function simulateWeek() {
     if (won) addMessage("Fans","The supporters are buzzing after that win! Keep it up.");
     else if (lost) addMessage("Fans","Tough loss. The faithful are hoping for a bounceback.");
   }
-  if (Math.random() < 0.15) addMessage("Board","The board is monitoring your performance closely.");
-  if (Math.random() < 0.10 && G.myPlayers.length > 0) {
+  if (Math.random() < 0.05) addMessage("Board","The board is monitoring your performance closely.");
+  if (Math.random() < 0.04 && G.myPlayers.length > 0) {
     const p = G.players[pick(G.myPlayers)];
-    if (p) addMessage(p.name, "I love it at this club, boss. Hope to extend my stay.");
+    const msgs = [
+      "I love it at this club, boss.",
+      "The lads are working hard in training.",
+      "I'm fully committed to this club.",
+    ];
+    if (p) addMessage(p.name, pick(msgs));
   }
   // Save results
   G.results.unshift({ week: G.week, results: allResults, userResult });
@@ -1293,22 +1298,27 @@ function checkMonthlyAwards() {
     addMessage("Awards", `${top.p.name} has been named Player of the Month!`);
     toast(`POTM: ${top.p.name}!`, "gold");
   }
-  // MOTM check
+  // MOTM check — only award once per 4-week block per season
   if (G.myPlayers.length) {
-    const standings = G.standings[G.division];
-    const list = Object.values(standings).sort((a,b)=>b.pts-a.pts);
-    const myRank = list.findIndex(s => s.teamId === G.userTeamId) + 1;
-    if (myRank <= 3) {
-      const award = {
-        id: nextId(),
-        type: "MOTM",
-        name: "Manager of the Month",
-        icon: "🎖️",
-        recipientName: "You",
-        stat: `Position #${myRank} in ${G.division}`,
-        season: G.season, week: G.week
-      };
-      G.awards.unshift(award);
+    const monthBlock = Math.floor(G.week / 4);
+    const alreadyGiven = G.awards.some(a => a.type === "MOTM" && a.season === G.season && Math.floor(a.week / 4) === monthBlock);
+    if (!alreadyGiven) {
+      const standings = G.standings[G.division];
+      const list = Object.values(standings).sort((a,b)=>b.pts-a.pts);
+      const myRank = list.findIndex(s => s.teamId === G.userTeamId) + 1;
+      if (myRank <= 3 && Math.random() < 0.6) {
+        const award = {
+          id: nextId(),
+          type: "MOTM",
+          name: "Manager of the Month",
+          icon: "🎖️",
+          recipientName: "You",
+          stat: `Position #${myRank} in ${G.division}`,
+          season: G.season, week: G.week
+        };
+        G.awards.unshift(award);
+        addMessage("Awards", "You've been named Manager of the Month!");
+      }
     }
   }
 }
@@ -1341,9 +1351,16 @@ function endOfSeasonAwards() {
     pushAward("Playmaker of the Season", "🎯", sortAssists[0].p, `${sortAssists[0].s.assists} assists`);
   }
   // POTS — combo
+  const posWeight = pos => {
+    const g = POSITIONS[pos] ? POSITIONS[pos].group : "MID";
+    if (g === "FWD") return 0.75;
+    if (g === "MID") return 1.0;
+    if (g === "DEF" || g === "GK") return 1.5;
+    return 1.0;
+  };
   const sortCombo = [...allPlayersInDiv].sort((a,b) => {
-    const sa = a.s.goals*3 + a.s.assists*2 + a.s.rating*a.s.apps*0.5;
-    const sb = b.s.goals*3 + b.s.assists*2 + b.s.rating*b.s.apps*0.5;
+    const sa = (a.s.goals*3 + a.s.assists*2) * posWeight(a.p.position) + a.s.rating*a.s.apps*0.5;
+    const sb = (b.s.goals*3 + b.s.assists*2) * posWeight(b.p.position) + b.s.rating*b.s.apps*0.5;
     return sb - sa;
   });
   if (sortCombo[0]) {
@@ -1431,11 +1448,13 @@ function endSeason() {
   if (promoted) {
     if (div === "Championship") G.division = "Premier League";
     else if (div === "League One") G.division = "Championship";
+    G.teams[G.userTeamId].division = G.division;
     addMessage("Board",`PROMOTED to the ${G.division}! Prize money: £${(prize/1e6).toFixed(0)}M`);
   }
   if (relegated && !gameOver) {
     if (div === "Premier League") G.division = "Championship";
     else if (div === "Championship") G.division = "League One";
+    G.teams[G.userTeamId].division = G.division;
     addMessage("Board",`Relegated to ${G.division}. We'll rebuild.`);
   }
   // Save end-of-season state for screen
@@ -1454,7 +1473,7 @@ function beginNewSeason() {
   }
   // Decrement contracts, age players
   Object.values(G.players).forEach(p => {
-    p.contractYears--;
+    if (p.contractYears > 0) p.contractYears--;
     p.age++;
     // Slight rating evolution
     if (p.age < 25 && p.rating < p.potential) p.rating = Math.min(p.potential, p.rating + randInt(0, 2));
@@ -1792,8 +1811,8 @@ function renderAdvance() {
   const standings = G.standings[G.division];
   const list = Object.values(standings).sort((a,b)=>b.pts-a.pts || (b.gf-b.ga)-(a.gf-a.ga));
   const myRank = list.findIndex(s => s.teamId === G.userTeamId);
-  const myStanding = list[myRank];
-  const next = list[Math.max(0, myRank - 1)];
+  const myStanding = myRank >= 0 ? list[myRank] : { pts:0, p:0, w:0, d:0, l:0, gf:0, ga:0 };
+  const next = myRank > 0 ? list[myRank - 1] : null;
 
   let recentMatches = "";
   if (G.results.length > 0) {
@@ -1827,11 +1846,11 @@ function renderAdvance() {
     <div class="card">
       <div class="card-title">League Position</div>
       <div style="display:flex; gap:20px; flex-wrap:wrap;">
-        <div class="stat-item"><div class="stat-label">Position</div><div class="stat-value">#${myRank+1}</div></div>
+        <div class="stat-item"><div class="stat-label">Position</div><div class="stat-value">#${myRank >= 0 ? myRank+1 : "—"}</div></div>
         <div class="stat-item"><div class="stat-label">Points</div><div class="stat-value">${myStanding.pts}</div></div>
         <div class="stat-item"><div class="stat-label">P/W/D/L</div><div class="stat-value">${myStanding.p} / ${myStanding.w} / ${myStanding.d} / ${myStanding.l}</div></div>
         <div class="stat-item"><div class="stat-label">GF / GA</div><div class="stat-value">${myStanding.gf} / ${myStanding.ga}</div></div>
-        ${next.teamId !== G.userTeamId ? `<div class="stat-item"><div class="stat-label">Above</div><div class="stat-value">${G.teams[next.teamId].name} (${next.pts}pts)</div></div>` : ""}
+        ${next && next.teamId !== G.userTeamId ? `<div class="stat-item"><div class="stat-label">Above</div><div class="stat-value">${G.teams[next.teamId] ? G.teams[next.teamId].name : '—'} (${next.pts}pts)</div></div>` : myRank === 0 ? `<div class="stat-item"><div class="stat-label">Position</div><div class="stat-value">League Leaders!</div></div>` : ""}
       </div>
     </div>
 
