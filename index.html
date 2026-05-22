@@ -1170,6 +1170,7 @@ function simulateMatch(homeId, awayId) {
   const hs = getTeamStrength(homeId);
   const as = getTeamStrength(awayId);
   const homeAdvantage = 5;
+  // xG based on attacking ability vs opponent defense
   let xgHome = (hs.attack + homeAdvantage - as.defense) / 12 + 1.2 + rand(-0.4, 0.4);
   let xgAway = (as.attack - hs.defense) / 12 + 0.8 + rand(-0.4, 0.4);
   let goalsHome = Math.max(0, Math.round(xgHome + normalRandom()));
@@ -1177,23 +1178,90 @@ function simulateMatch(homeId, awayId) {
   // Pick scorers
   const homeScorers = pickScorers(hs.players, goalsHome);
   const awayScorers = pickScorers(as.players, goalsAway);
-  // Update player stats
-  updateMatchStats(hs.players, homeScorers, goalsAway === 0);
-  updateMatchStats(as.players, awayScorers, goalsHome === 0);
+  // Determine outcome from the home team's perspective for rating bonuses
+  const homeWon = goalsHome > goalsAway;
+  const awayWon = goalsAway > goalsHome;
+  // Compute per-match ratings and update season averages
+  const homeMatchRatings = computeMatchRatings(hs.players, homeScorers, goalsAway === 0, homeWon, awayWon);
+  const awayMatchRatings = computeMatchRatings(as.players, awayScorers, goalsHome === 0, awayWon, homeWon);
   // Standings
   const div = G.teams[homeId].division;
   const ts = G.standings[div];
-  ts[homeId].p++; ts[awayId].p++;
-  ts[homeId].gf += goalsHome; ts[homeId].ga += goalsAway;
-  ts[awayId].gf += goalsAway; ts[awayId].ga += goalsHome;
-  if (goalsHome > goalsAway) { ts[homeId].w++; ts[homeId].pts += 3; ts[awayId].l++; }
-  else if (goalsHome < goalsAway) { ts[awayId].w++; ts[awayId].pts += 3; ts[homeId].l++; }
-  else { ts[homeId].d++; ts[awayId].d++; ts[homeId].pts++; ts[awayId].pts++; }
+  if (ts && ts[homeId] && ts[awayId]) {
+    ts[homeId].p++; ts[awayId].p++;
+    ts[homeId].gf += goalsHome; ts[homeId].ga += goalsAway;
+    ts[awayId].gf += goalsAway; ts[awayId].ga += goalsHome;
+    if (homeWon) { ts[homeId].w++; ts[homeId].pts += 3; ts[awayId].l++; }
+    else if (awayWon) { ts[awayId].w++; ts[awayId].pts += 3; ts[homeId].l++; }
+    else { ts[homeId].d++; ts[awayId].d++; ts[homeId].pts++; ts[awayId].pts++; }
+  }
+  // Find best player on each side
+  const homeBest = findBestPlayer(homeMatchRatings);
+  const awayBest = findBestPlayer(awayMatchRatings);
   return {
     homeId, awayId, goalsHome, goalsAway,
     homeScorers, awayScorers,
+    homeBest, awayBest,
+    homeMatchRatings, awayMatchRatings,
     division: div, week: G.week
   };
+}
+
+function computeMatchRatings(players, scorers, cleanSheet, won, lost) {
+  // Returns array of { playerId, name, position, rating, goals, assists, cleanSheet }
+  const ratings = [];
+  // Tally goals & assists for this match
+  const goalCount = {};
+  const assistCount = {};
+  scorers.forEach(s => {
+    goalCount[s.playerId] = (goalCount[s.playerId] || 0) + 1;
+    if (s.assistId) assistCount[s.assistId] = (assistCount[s.assistId] || 0) + 1;
+  });
+  players.forEach(p => {
+    if (!p) return;
+    if (G.playerStats[p.id]) {
+      G.playerStats[p.id].apps++;
+      G.careerStats[p.id].apps++;
+    }
+    const isDefensive = p.position === "GK" || POSITIONS[p.position].group === "DEF";
+    const goals = goalCount[p.id] || 0;
+    const assists = assistCount[p.id] || 0;
+    // Per-match rating: 6.0 base, modulated by player quality, contributions, and result
+    let rating = 6.0 + (p.rating - 60) / 25;
+    rating += goals * 1.0;
+    rating += assists * 0.6;
+    if (cleanSheet && isDefensive) rating += 0.5;
+    if (won) rating += 0.2;
+    if (lost) rating -= 0.2;
+    if (p.moraleBoostWeeks > 0) rating += 0.15;
+    rating += rand(-0.4, 0.4);
+    rating = Math.max(4.5, Math.min(10, rating));
+    rating = Math.round(rating * 10) / 10;
+    // Update season + career stats
+    if (G.playerStats[p.id]) {
+      const ps = G.playerStats[p.id];
+      ps.goals += goals;
+      ps.assists += assists;
+      if (cleanSheet && isDefensive) ps.cleanSheets++;
+      ps.rating = (ps.rating * (ps.apps - 1) + rating) / ps.apps;
+    }
+    if (G.careerStats[p.id]) {
+      G.careerStats[p.id].goals += goals;
+      G.careerStats[p.id].assists += assists;
+      if (cleanSheet && isDefensive) G.careerStats[p.id].cleanSheets++;
+    }
+    ratings.push({
+      playerId: p.id, name: p.name, position: p.position,
+      rating, goals, assists,
+      cleanSheet: cleanSheet && isDefensive
+    });
+  });
+  return ratings;
+}
+
+function findBestPlayer(matchRatings) {
+  if (!matchRatings || matchRatings.length === 0) return null;
+  return [...matchRatings].sort((a, b) => b.rating - a.rating)[0];
 }
 
 function pickScorers(players, count) {
@@ -1233,31 +1301,8 @@ function pickScorers(players, count) {
   return scorers;
 }
 
-function updateMatchStats(players, scorers, cleanSheet) {
-  players.forEach(p => {
-    G.playerStats[p.id].apps++;
-    G.careerStats[p.id].apps++;
-    if (cleanSheet && (p.position === "GK" || POSITIONS[p.position].group === "DEF")) {
-      G.playerStats[p.id].cleanSheets++;
-      G.careerStats[p.id].cleanSheets++;
-    }
-    // Rating
-    const baseRating = 6.0 + (p.rating - 60) / 20 + rand(-0.5, 0.5);
-    const ps = G.playerStats[p.id];
-    ps.rating = (ps.rating * (ps.apps - 1) + baseRating) / ps.apps;
-  });
-  scorers.forEach(s => {
-    if (G.playerStats[s.playerId]) {
-      G.playerStats[s.playerId].goals++;
-      G.careerStats[s.playerId].goals++;
-      G.playerStats[s.playerId].rating = Math.min(10, G.playerStats[s.playerId].rating + 0.3 / G.playerStats[s.playerId].apps);
-    }
-    if (s.assistId && G.playerStats[s.assistId]) {
-      G.playerStats[s.assistId].assists++;
-      G.careerStats[s.assistId].assists++;
-    }
-  });
-}
+// Legacy — replaced by computeMatchRatings. Kept as no-op for any stale call sites.
+function updateMatchStats() {}
 
 // --- WEEK ADVANCE ---
 function simulateWeek() {
@@ -1892,15 +1937,18 @@ function startSeason() {
 // --- GAME HEADER ---
 function renderGameHeader() {
   const team = G.teams[G.userTeamId];
+  if (!team) return;
   document.getElementById("gameClubName").textContent = team.name;
   document.getElementById("gameClubMeta").textContent = `Season ${G.seasonYear}-${(G.seasonYear+1).toString().slice(2)} · Week ${G.week} · ${G.division}`;
   document.getElementById("gameBudget").textContent = fmtMoney(G.budget);
   document.getElementById("gameWages").textContent = fmtMoney(computeWeeklyWages()) + "/wk";
-  const standings = G.standings[G.division];
+  const standings = G.standings && G.standings[G.division];
   if (standings) {
     const list = Object.values(standings).sort((a,b)=>b.pts-a.pts || (b.gf-b.ga)-(a.gf-a.ga));
-    const myRank = list.findIndex(s => s.teamId === G.userTeamId) + 1;
-    document.getElementById("gamePos").textContent = "#" + myRank;
+    const idx = list.findIndex(s => s.teamId === G.userTeamId);
+    document.getElementById("gamePos").textContent = idx >= 0 ? "#" + (idx + 1) : "—";
+  } else {
+    document.getElementById("gamePos").textContent = "—";
   }
 }
 
@@ -1936,10 +1984,14 @@ function renderTab() {
 
 // --- ADVANCE TAB ---
 function renderAdvance() {
+  // Self-heal: rebuild missing fixtures/standings before we read them
+  if (!G.fixtures || !G.fixtures[G.division] || !G.standings || !G.standings[G.division]) {
+    validateGameState();
+  }
   const totalWeeks = G.division === "Premier League" ? 38 : 46;
   const myFix = getMyNextFixture();
   const lastResults = getMyLastResults(5);
-  const standings = G.standings[G.division];
+  const standings = G.standings[G.division] || {};
   const list = Object.values(standings).sort((a,b)=>b.pts-a.pts || (b.gf-b.ga)-(a.gf-a.ga));
   const myRank = list.findIndex(s => s.teamId === G.userTeamId);
   const myStanding = myRank >= 0 ? list[myRank] : { pts:0, p:0, w:0, d:0, l:0, gf:0, ga:0 };
@@ -2128,8 +2180,54 @@ function renderCalendar() {
   document.getElementById("tabContent").innerHTML = html;
 }
 
+// Repair game state if anything required is missing — old saves, post-promotion, etc.
+function validateGameState() {
+  if (!G.teams || Object.keys(G.teams).length === 0) {
+    console.warn("No teams in state — cannot validate");
+    return false;
+  }
+  if (!G.fixtures) G.fixtures = {};
+  if (!G.standings) G.standings = {};
+  if (!G.results) G.results = [];
+  if (!G.messages) G.messages = [];
+  if (!G.awards) G.awards = [];
+  if (!G.incomingBids) G.incomingBids = [];
+  if (!G.transferList) G.transferList = [];
+  if (!G.youthPlayers) G.youthPlayers = [];
+  if (!G.playerStats) G.playerStats = {};
+  if (!G.careerStats) G.careerStats = {};
+  // Ensure current division has fixtures and standings
+  const divs = ["Premier League", "Championship", "League One"];
+  let needsFixtures = false;
+  divs.forEach(d => {
+    if (!G.fixtures[d] || !Array.isArray(G.fixtures[d]) || G.fixtures[d].length === 0) needsFixtures = true;
+    if (!G.standings[d]) needsFixtures = true;
+  });
+  if (needsFixtures) {
+    console.log("Rebuilding fixtures and standings...");
+    setupAllFixtures();
+  }
+  // Ensure every player in myPlayers has stats entries
+  G.myPlayers.forEach(id => {
+    if (!G.playerStats[id]) G.playerStats[id] = { apps:0, goals:0, assists:0, cleanSheets:0, rating:6.5 };
+    if (!G.careerStats[id]) G.careerStats[id] = { apps:0, goals:0, assists:0, cleanSheets:0 };
+  });
+  // Same for every AI player still on a team
+  Object.values(G.teams).forEach(t => {
+    (t.players || []).forEach(id => {
+      if (!G.playerStats[id]) G.playerStats[id] = { apps:0, goals:0, assists:0, cleanSheets:0, rating:6.5 };
+      if (!G.careerStats[id]) G.careerStats[id] = { apps:0, goals:0, assists:0, cleanSheets:0 };
+    });
+  });
+  return true;
+}
+
 function doSimulateWeek() {
   try {
+    if (!validateGameState()) {
+      toast("Game state is incomplete — please start a New Game", "error");
+      return;
+    }
     const res = simulateWeek();
     if (res.endOfSeason) {
       renderEndOfSeason();
@@ -2151,6 +2249,7 @@ function doSimulateWeek() {
   } catch (err) {
     console.error("Simulate week failed:", err);
     toast("Simulation error: " + err.message, "error");
+    alert("Simulation error — open browser console (F12) for details:\n\n" + err.message);
   }
 }
 
@@ -2162,24 +2261,78 @@ function showMatchModal(r) {
   const myName = G.teams[G.userTeamId].name;
   const myScorers = isHome ? r.homeScorers : r.awayScorers;
   const theirScorers = isHome ? r.awayScorers : r.homeScorers;
+  const myRatings = isHome ? r.homeMatchRatings : r.awayMatchRatings;
+  const theirRatings = isHome ? r.awayMatchRatings : r.homeMatchRatings;
+  const myBest = isHome ? r.homeBest : r.awayBest;
+  const theirBest = isHome ? r.awayBest : r.homeBest;
+  // Player of the Match = higher rated of the two
+  const motm = (myBest && theirBest)
+    ? (myBest.rating >= theirBest.rating ? { ...myBest, team: myName, isYou: true } : { ...theirBest, team: opp, isYou: false })
+    : null;
+  // Top 3 from user team
+  const myTop3 = [...(myRatings || [])].sort((a, b) => b.rating - a.rating).slice(0, 3);
+  // Get player avatars
+  const playerAvatar = pid => {
+    const p = G.players[pid];
+    return p ? p.avatar : "";
+  };
+  const ratingColor = rt => rt >= 8.5 ? "#d29922" : rt >= 7.5 ? "#2ea043" : rt >= 6.5 ? "#e6edf3" : "#8b949e";
   const html = `
     <button class="modal-close" onclick="closeModal()">×</button>
     <div class="match-display" style="margin:0 0 16px 0;">
-      <div class="match-info">FULL TIME</div>
+      <div class="match-info">FULL TIME · Week ${r.week}</div>
       <div class="match-teams">${isHome ? myName : opp}<br>vs<br>${isHome ? opp : myName}</div>
-      <div class="match-score">${r.goalsHome} - ${r.goalsAway}</div>
-      <div class="match-info">${my > them ? "VICTORY" : my < them ? "DEFEAT" : "DRAW"}</div>
+      <div class="match-score" style="color:${my > them ? '#2ea043' : my < them ? '#f85149' : '#d29922'};">${r.goalsHome} - ${r.goalsAway}</div>
+      <div class="match-info" style="font-size:14px; font-weight:700;">${my > them ? "VICTORY 🏆" : my < them ? "DEFEAT" : "DRAW"}</div>
     </div>
-    <div style="display:flex; gap:16px; flex-wrap:wrap;">
+
+    ${motm ? `
+      <div style="background:linear-gradient(135deg, #2a2515, #1a1810); border:1px solid #d29922; border-radius:10px; padding:14px; margin-bottom:14px; display:flex; align-items:center; gap:14px;">
+        <img src="${playerAvatar(motm.playerId)}" style="width:56px; height:56px; border-radius:50%; border:2px solid #d29922;">
+        <div style="flex:1;">
+          <div style="font-size:11px; color:#d29922; font-weight:700; letter-spacing:1px;">⭐ PLAYER OF THE MATCH</div>
+          <div style="font-size:17px; font-weight:700; margin-top:2px;">${motm.name} <span style="color:#8b949e; font-size:13px; font-weight:400;">· ${motm.position}</span></div>
+          <div style="font-size:12px; color:#8b949e; margin-top:2px;">${motm.team}${motm.goals ? ` · ${motm.goals}⚽` : ''}${motm.assists ? ` · ${motm.assists}🅰️` : ''}${motm.cleanSheet ? ` · 🧤 CS` : ''}</div>
+        </div>
+        <div style="font-size:28px; font-weight:900; color:#d29922;">${motm.rating.toFixed(1)}</div>
+      </div>
+    ` : ""}
+
+    ${myBest && (!motm || !motm.isYou) ? `
+      <div style="background:#161b22; border:1px solid #30363d; border-left:3px solid #2ea043; border-radius:8px; padding:12px; margin-bottom:14px; display:flex; align-items:center; gap:12px;">
+        <img src="${playerAvatar(myBest.playerId)}" style="width:44px; height:44px; border-radius:50%;">
+        <div style="flex:1;">
+          <div style="font-size:10px; color:#2ea043; font-weight:700; letter-spacing:1px;">YOUR BEST PLAYER</div>
+          <div style="font-size:15px; font-weight:700;">${myBest.name} <span style="color:#8b949e; font-size:12px; font-weight:400;">· ${myBest.position}</span></div>
+          <div style="font-size:11px; color:#8b949e;">${myBest.goals ? `${myBest.goals}⚽ ` : ''}${myBest.assists ? `${myBest.assists}🅰️ ` : ''}${myBest.cleanSheet ? '🧤 CS ' : ''}${!myBest.goals && !myBest.assists && !myBest.cleanSheet ? 'Strong all-round performance' : ''}</div>
+        </div>
+        <div style="font-size:22px; font-weight:900; color:${ratingColor(myBest.rating)};">${myBest.rating.toFixed(1)}</div>
+      </div>
+    ` : ""}
+
+    <div style="display:flex; gap:16px; flex-wrap:wrap; margin-bottom:14px;">
       <div style="flex:1; min-width:200px;">
         <div class="card-title">${myName} Scorers</div>
-        ${myScorers.map(s => `<div class="stat-row"><span>⚽ ${s.name}</span><span>${s.assistName?'(assist: '+s.assistName+')':''}</span></div>`).join("") || '<div class="stat-row"><span style="color:#8b949e;">No goals</span></div>'}
+        ${myScorers.map(s => `<div class="stat-row"><span>⚽ ${s.name}</span><span style="font-size:11px; color:#8b949e;">${s.assistName ? 'asst: ' + s.assistName : ''}</span></div>`).join("") || '<div class="stat-row"><span style="color:#8b949e;">No goals</span></div>'}
       </div>
       <div style="flex:1; min-width:200px;">
         <div class="card-title">${opp} Scorers</div>
         ${theirScorers.map(s => `<div class="stat-row"><span>⚽ ${s.name}</span><span></span></div>`).join("") || '<div class="stat-row"><span style="color:#8b949e;">No goals</span></div>'}
       </div>
     </div>
+
+    ${myTop3.length > 0 ? `
+      <div class="card-title">${myName} Top Performers</div>
+      <div style="margin-bottom:14px;">
+        ${myTop3.map((pr, i) => `
+          <div class="stat-row">
+            <span><span style="color:#d29922; font-weight:700; margin-right:8px;">${i+1}.</span>${pr.name} <span style="font-size:11px; color:#8b949e;">${pr.position}</span></span>
+            <span style="font-weight:700; color:${ratingColor(pr.rating)};">${pr.rating.toFixed(1)}</span>
+          </div>
+        `).join("")}
+      </div>
+    ` : ""}
+
     <div style="text-align:center; margin-top:16px;">
       <button class="btn" onclick="closeModal()">Continue</button>
     </div>
