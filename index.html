@@ -864,7 +864,7 @@ function makeAvatar(id, name, nationality) {
 }
 
 // --- GENERATORS ---
-function generatePlayer(position, ageRange = [17, 35]) {
+function generatePlayer(position, ageRange = [17, 35], maxRating = 99) {
   const nat = pick(NATIONALITIES);
   const firstName = pick(FIRST_NAMES[nat]);
   const lastName = pick(LAST_NAMES[nat]);
@@ -877,6 +877,7 @@ function generatePlayer(position, ageRange = [17, 35]) {
   else if (r < 0.45) rating = randInt(65, 74); // Good
   else if (r < 0.75) rating = randInt(55, 64); // Average
   else rating = randInt(45, 54);               // Lower
+  if (rating > maxRating) rating = randInt(Math.max(40, maxRating - 14), maxRating);
   const id = nextId();
   const fullName = firstName + " " + lastName;
   const p = {
@@ -1667,7 +1668,7 @@ function ensureFreeAgentPool() {
   };
   for (const g of Object.keys(targets)) {
     while (byGroup[g] < targets[g]) {
-      generatePlayer(pick(positionsByGroup[g]));
+      generatePlayer(pick(positionsByGroup[g]), [17, 35], 64);
       byGroup[g]++;
     }
   }
@@ -1681,7 +1682,8 @@ function renderSetupPlayers() {
   const search = document.getElementById("setupSearch").value.toLowerCase();
   const posFilter = document.getElementById("setupPosFilter").value;
   const starFilter = parseInt(document.getElementById("setupStarFilter").value);
-  const free = Object.values(G.players).filter(p => p.teamId === null);
+  // Free agents are capped at 3 stars (rating <= 64). Higher-rated players must be bought from clubs.
+  const free = Object.values(G.players).filter(p => p.teamId === null && p.rating <= 64);
   let filtered = free;
   if (search) filtered = filtered.filter(p => p.name.toLowerCase().includes(search));
   if (posFilter) filtered = filtered.filter(p => POSITIONS[p.position].group === posFilter);
@@ -2069,6 +2071,8 @@ function renderMarketBuyPlayers() {
   const priceFilter = parseFloat(document.getElementById("mktPriceFilter").value) || 0;
   let pool = Object.values(G.players).filter(p => {
     if (p.teamId === G.userTeamId) return false;
+    // Free agents shown in the market are capped at 3 stars (rating <= 64) — hide higher-rated unsigned players
+    if (p.teamId === null && p.rating > 64) return false;
     return true;
   });
   if (search) pool = pool.filter(p => p.name.toLowerCase().includes(search));
