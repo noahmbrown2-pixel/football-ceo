@@ -179,6 +179,14 @@
   }
   .stars { color: #d29922; font-size: 12px; letter-spacing: 1px; }
   .star-empty { color: #30363d; }
+  .star-half {
+    background: linear-gradient(90deg, #d29922 50%, #30363d 50%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    color: transparent;
+  }
+  .stars .rating-num { color: #8b949e; font-size: 11px; margin-left: 6px; letter-spacing: 0; }
   .player-price { color: #2ea043; font-size: 13px; font-weight: 600; margin-top: 2px; }
 
   /* MAIN GAME */
@@ -505,10 +513,14 @@
     </select>
     <select id="setupStarFilter" onchange="renderSetupPlayers()">
       <option value="0">All Ratings</option>
-      <option value="2">2+ Stars</option>
-      <option value="3">3+ Stars</option>
-      <option value="4">4+ Stars</option>
-      <option value="5">5 Stars</option>
+      <option value="3">1.5★+</option>
+      <option value="4">2★+</option>
+      <option value="5">2.5★+</option>
+      <option value="6">3★+</option>
+      <option value="7">3.5★+</option>
+      <option value="8">4★+</option>
+      <option value="9">4.5★+</option>
+      <option value="10">5★ only</option>
     </select>
   </div>
   <div class="player-grid" id="setupPlayerGrid"></div>
@@ -777,20 +789,27 @@ function normalRandom() {
 }
 function nextId() { return G.nextId++; }
 
+// Returns number of half-stars (1..10) — so 5 = 2.5 stars, 10 = 5 stars
+function ratingToHalfStars(r) {
+  if (r < 40) return 1;
+  if (r >= 88) return 10;
+  return Math.max(1, Math.min(10, Math.floor((r - 40) / 5.4) + 1));
+}
+// Legacy compat — full-star integer (1..5) used by filter dropdowns
 function ratingToStars(r) {
-  if (r >= 85) return 5;
-  if (r >= 75) return 4;
-  if (r >= 60) return 3;
-  if (r >= 40) return 2;
-  return 1;
+  return Math.ceil(ratingToHalfStars(r) / 2);
 }
 function starsHTML(r) {
-  const s = ratingToStars(r);
+  const half = ratingToHalfStars(r);
+  const display = (half / 2).toFixed(1).replace(/\.0$/, '');
   let h = '<span class="stars">';
   for (let i = 0; i < 5; i++) {
-    h += i < s ? "★" : '<span class="star-empty">★</span>';
+    const slot = i * 2;
+    if (half >= slot + 2) h += '★';
+    else if (half >= slot + 1) h += '<span class="star-half">★</span>';
+    else h += '<span class="star-empty">★</span>';
   }
-  h += '</span>';
+  h += `<span class="rating-num">${display}/5</span></span>`;
   return h;
 }
 
@@ -1666,7 +1685,7 @@ function renderSetupPlayers() {
   let filtered = free;
   if (search) filtered = filtered.filter(p => p.name.toLowerCase().includes(search));
   if (posFilter) filtered = filtered.filter(p => POSITIONS[p.position].group === posFilter);
-  if (starFilter) filtered = filtered.filter(p => ratingToStars(p.rating) >= starFilter);
+  if (starFilter) filtered = filtered.filter(p => ratingToHalfStars(p.rating) >= starFilter);
   filtered.sort((a,b) => b.rating - a.rating);
   filtered = filtered.slice(0, 100);
   grid.innerHTML = filtered.map(p => playerSetupCard(p)).join("");
@@ -2029,10 +2048,14 @@ function renderMarketBuyPlayers() {
       </select>
       <select id="mktStarFilter" onchange="renderMarketBuyPlayers()">
         <option value="0">All Ratings</option>
-        <option value="2">2+ Stars</option>
-        <option value="3">3+ Stars</option>
-        <option value="4">4+ Stars</option>
-        <option value="5">5 Stars</option>
+        <option value="3">1.5★+</option>
+        <option value="4">2★+</option>
+        <option value="5">2.5★+</option>
+        <option value="6">3★+</option>
+        <option value="7">3.5★+</option>
+        <option value="8">4★+</option>
+        <option value="9">4.5★+</option>
+        <option value="10">5★ only</option>
       </select>
       <input type="number" placeholder="Max price (£)" id="mktPriceFilter" oninput="renderMarketBuyPlayers()" style="width:140px;">
     </div>
@@ -2050,7 +2073,7 @@ function renderMarketBuyPlayers() {
   });
   if (search) pool = pool.filter(p => p.name.toLowerCase().includes(search));
   if (posFilter) pool = pool.filter(p => POSITIONS[p.position].group === posFilter);
-  if (starFilter) pool = pool.filter(p => ratingToStars(p.rating) >= starFilter);
+  if (starFilter) pool = pool.filter(p => ratingToHalfStars(p.rating) >= starFilter);
   if (priceFilter) pool = pool.filter(p => p.value <= priceFilter);
   pool.sort((a,b) => b.rating - a.rating);
   pool = pool.slice(0, 80);
