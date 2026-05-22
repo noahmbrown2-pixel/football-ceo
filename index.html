@@ -1628,13 +1628,36 @@ function selectTeam(teamId) {
   Object.values(G.teams).forEach(t => {
     if (t.id !== teamId) generateAITeamSquad(t);
   });
+  // Guarantee a healthy free-agent pool for the user
+  ensureFreeAgentPool();
   setupAllFixtures();
   renderSetupPlayers();
   showScreen("playerSetup");
 }
 
+function ensureFreeAgentPool() {
+  const free = Object.values(G.players).filter(p => p.teamId === null);
+  const byGroup = { GK: 0, DEF: 0, MID: 0, FWD: 0 };
+  free.forEach(p => byGroup[POSITIONS[p.position].group]++);
+  const targets = { GK: 25, DEF: 80, MID: 90, FWD: 60 };
+  const positionsByGroup = {
+    GK: ["GK"],
+    DEF: ["CB", "CB", "CB", "LB", "LB", "RB", "RB", "LWB", "RWB"],
+    MID: ["CDM", "CDM", "CM", "CM", "CM", "CAM", "CAM", "LM", "RM"],
+    FWD: ["ST", "ST", "ST", "CF", "CF", "SS", "LW", "RW"]
+  };
+  for (const g of Object.keys(targets)) {
+    while (byGroup[g] < targets[g]) {
+      generatePlayer(pick(positionsByGroup[g]));
+      byGroup[g]++;
+    }
+  }
+}
+
 // --- PLAYER SETUP ---
 function renderSetupPlayers() {
+  // Auto-top up the free agent pool every render to guarantee the user can always sign players
+  ensureFreeAgentPool();
   const grid = document.getElementById("setupPlayerGrid");
   const search = document.getElementById("setupSearch").value.toLowerCase();
   const posFilter = document.getElementById("setupPosFilter").value;
@@ -1702,7 +1725,23 @@ function finishPlayerSetup() {
 }
 
 // --- COACH SETUP ---
+function ensureFreeCoachPool() {
+  const free = Object.values(G.coaches).filter(c => c.teamId === null);
+  const byRole = {};
+  COACH_ROLES.forEach(r => byRole[r] = 0);
+  free.forEach(c => { if (byRole[c.role] !== undefined) byRole[c.role]++; });
+  // At least 4 free coaches per role
+  COACH_ROLES.forEach(r => {
+    while ((byRole[r] || 0) < 4) {
+      const c = generateCoach();
+      c.role = r;
+      byRole[r] = (byRole[r] || 0) + 1;
+    }
+  });
+}
+
 function renderSetupCoaches() {
+  ensureFreeCoachPool();
   const grid = document.getElementById("setupCoachGrid");
   const search = document.getElementById("coachSearch").value.toLowerCase();
   const roleFilter = document.getElementById("coachRoleFilter").value;
@@ -1976,6 +2015,7 @@ function setSubTab(tab, sub) {
 }
 
 function renderMarketBuyPlayers() {
+  ensureFreeAgentPool();
   const body = document.getElementById("marketBody");
   body.innerHTML = `
     <div class="filter-bar">
@@ -2088,6 +2128,7 @@ function submitBid(pid) {
 }
 
 function renderMarketBuyCoaches() {
+  ensureFreeCoachPool();
   const body = document.getElementById("marketBody");
   const free = Object.values(G.coaches).filter(c => c.teamId === null && !G.myCoaches.includes(c.id));
   free.sort((a,b) => b.rating - a.rating);
