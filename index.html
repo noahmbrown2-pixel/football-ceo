@@ -177,6 +177,74 @@
     font-weight: 700;
     margin-right: 4px;
   }
+  /* CALENDAR */
+  .cal-month {
+    background: #161b22;
+    border: 1px solid #30363d;
+    border-radius: 10px;
+    padding: 14px;
+    margin-bottom: 14px;
+  }
+  .cal-month-title {
+    font-size: 16px;
+    font-weight: 700;
+    color: #d29922;
+    margin-bottom: 10px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid #30363d;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .cal-month-stats { font-size: 12px; color: #8b949e; font-weight: 400; }
+  .cal-week-row {
+    display: grid;
+    grid-template-columns: 70px 1fr 70px 1fr 80px;
+    align-items: center;
+    padding: 8px 6px;
+    border-bottom: 1px solid #21262d;
+    font-size: 13px;
+    gap: 8px;
+  }
+  .cal-week-row:last-child { border-bottom: none; }
+  .cal-week-row.played { opacity: 0.7; }
+  .cal-week-row.current {
+    background: #1c2a1f;
+    border-left: 3px solid #d29922;
+    padding-left: 9px;
+    border-radius: 4px;
+  }
+  .cal-week-row.upcoming { background: transparent; }
+  .cal-week-row.you { font-weight: 600; }
+  .cal-week-num { color: #8b949e; font-size: 11px; }
+  .cal-home { text-align: right; }
+  .cal-away { text-align: left; }
+  .cal-score {
+    text-align: center;
+    font-weight: 700;
+    padding: 3px 8px;
+    border-radius: 4px;
+    background: #21262d;
+  }
+  .cal-score.win { background: #1c3a1f; color: #2ea043; }
+  .cal-score.loss { background: #3a1c1c; color: #f85149; }
+  .cal-score.draw { background: #2a2515; color: #d29922; }
+  .cal-score.future { background: transparent; color: #8b949e; font-weight: 400; }
+  .cal-venue {
+    display: inline-block;
+    padding: 1px 6px;
+    border-radius: 3px;
+    font-size: 10px;
+    font-weight: 700;
+    background: #21262d;
+    color: #8b949e;
+  }
+  .cal-venue.home { background: #1f3a25; color: #2ea043; }
+  .cal-venue.away { background: #2a2030; color: #c084fc; }
+  @media (max-width: 600px) {
+    .cal-week-row { grid-template-columns: 50px 1fr 60px 1fr 50px; font-size: 11px; }
+  }
+
   .stars { color: #d29922; font-size: 12px; letter-spacing: 1px; }
   .star-empty { color: #30363d; }
   .star-half {
@@ -561,6 +629,7 @@
   </div>
   <div class="tab-bar">
     <button class="tab active" onclick="switchTab('advance')">ADVANCE</button>
+    <button class="tab" onclick="switchTab('calendar')">CALENDAR</button>
     <button class="tab" onclick="switchTab('market')">MARKET</button>
     <button class="tab" onclick="switchTab('youth')">YOUTH</button>
     <button class="tab" onclick="switchTab('standings')">STANDINGS</button>
@@ -1192,14 +1261,19 @@ function updateMatchStats(players, scorers, cleanSheet) {
 
 // --- WEEK ADVANCE ---
 function simulateWeek() {
+  // Defensive: rebuild fixtures if missing (e.g., loaded old save or post-promotion bug)
+  if (!G.fixtures || !G.fixtures[G.division] || !G.fixtures[G.division].length) {
+    setupAllFixtures();
+  }
   const weekIdx = G.week - 1;
   const divisions = ["Premier League", "Championship", "League One"];
   let userResult = null;
   const allResults = [];
   divisions.forEach(div => {
     const rounds = G.fixtures[div];
-    if (weekIdx < rounds.length) {
+    if (rounds && weekIdx < rounds.length && rounds[weekIdx]) {
       rounds[weekIdx].matches.forEach(([homeId, awayId]) => {
+        if (!G.teams[homeId] || !G.teams[awayId]) return;
         const r = simulateMatch(homeId, awayId);
         allResults.push(r);
         if (homeId === G.userTeamId || awayId === G.userTeamId) userResult = r;
@@ -1850,6 +1924,7 @@ function renderTab() {
   }
   switch(currentTab) {
     case "advance": renderAdvance(); break;
+    case "calendar": renderCalendar(); break;
     case "market": renderMarket(); break;
     case "youth": renderYouth(); break;
     case "standings": renderStandings(); break;
@@ -1917,8 +1992,8 @@ function renderAdvance() {
 
 function getMyNextFixture() {
   const weekIdx = G.week - 1;
-  const rounds = G.fixtures[G.division];
-  if (weekIdx >= rounds.length) return null;
+  const rounds = G.fixtures && G.fixtures[G.division];
+  if (!rounds || weekIdx >= rounds.length || !rounds[weekIdx]) return null;
   const match = rounds[weekIdx].matches.find(m => m[0] === G.userTeamId || m[1] === G.userTeamId);
   if (!match) return null;
   return {
@@ -1955,24 +2030,128 @@ function resultRowHTML(r) {
   </div>`;
 }
 
+// --- CALENDAR TAB ---
+function renderCalendar() {
+  const totalWeeks = G.division === "Premier League" ? 38 : 46;
+  const rounds = (G.fixtures && G.fixtures[G.division]) || [];
+  // Group weeks into 10 months (Aug → May)
+  const monthNames = ["August","September","October","November","December","January","February","March","April","May"];
+  const weeksPerMonth = totalWeeks / monthNames.length;
+  // Build a map of played results by week → result for the user's match
+  const userResultsByWeek = {};
+  G.results.forEach(w => {
+    if (w.userResult) userResultsByWeek[w.week] = w.userResult;
+  });
+
+  // Build month groupings
+  const months = monthNames.map((name, idx) => {
+    const startWeek = Math.floor(idx * weeksPerMonth) + 1;
+    const endWeek = Math.min(totalWeeks, Math.floor((idx + 1) * weeksPerMonth));
+    const weeks = [];
+    for (let w = startWeek; w <= endWeek; w++) {
+      const round = rounds[w - 1];
+      if (!round) continue;
+      const myMatch = round.matches.find(m => m[0] === G.userTeamId || m[1] === G.userTeamId);
+      if (!myMatch) continue;
+      const isHome = myMatch[0] === G.userTeamId;
+      const opponentId = isHome ? myMatch[1] : myMatch[0];
+      const result = userResultsByWeek[w];
+      weeks.push({ week: w, isHome, opponentId, result });
+    }
+    return { name, startWeek, endWeek, weeks };
+  });
+
+  // Stats per month: W/D/L
+  function monthStats(monthWeeks) {
+    let w=0, d=0, l=0;
+    monthWeeks.forEach(({ result, isHome }) => {
+      if (!result) return;
+      const my = isHome ? result.goalsHome : result.goalsAway;
+      const them = isHome ? result.goalsAway : result.goalsHome;
+      if (my > them) w++;
+      else if (my < them) l++;
+      else d++;
+    });
+    return { w, d, l, total: monthWeeks.length };
+  }
+
+  const teamName = G.teams[G.userTeamId].name;
+
+  const html = `
+    <div class="card" style="margin-bottom:14px;">
+      <div class="card-title">Season ${G.seasonYear}-${(G.seasonYear+1).toString().slice(2)} · ${G.division}</div>
+      <div style="color:#8b949e; font-size:13px;">All ${teamName} fixtures for the season. Current week is highlighted in gold.</div>
+    </div>
+    ${months.map(m => {
+      if (m.weeks.length === 0) return "";
+      const stats = monthStats(m.weeks);
+      const played = stats.w + stats.d + stats.l;
+      return `
+        <div class="cal-month">
+          <div class="cal-month-title">
+            <span>${m.name}</span>
+            <span class="cal-month-stats">${played}/${m.weeks.length} played${played > 0 ? ` · ${stats.w}W ${stats.d}D ${stats.l}L` : ""}</span>
+          </div>
+          ${m.weeks.map(({ week, isHome, opponentId, result }) => {
+            const opp = G.teams[opponentId] ? G.teams[opponentId].name : "—";
+            let scoreCell;
+            let rowClass = "you";
+            if (result) {
+              const my = isHome ? result.goalsHome : result.goalsAway;
+              const them = isHome ? result.goalsAway : result.goalsHome;
+              const cls = my > them ? "win" : my < them ? "loss" : "draw";
+              scoreCell = `<div class="cal-score ${cls}">${result.goalsHome}-${result.goalsAway}</div>`;
+              rowClass += " played";
+            } else if (week === G.week) {
+              scoreCell = `<div class="cal-score future">vs</div>`;
+              rowClass += " current";
+            } else {
+              scoreCell = `<div class="cal-score future">vs</div>`;
+              rowClass += " upcoming";
+            }
+            const homeTeamName = isHome ? teamName : opp;
+            const awayTeamName = isHome ? opp : teamName;
+            return `
+              <div class="cal-week-row ${rowClass}">
+                <span class="cal-week-num">Wk ${week}</span>
+                <span class="cal-home">${homeTeamName}</span>
+                ${scoreCell}
+                <span class="cal-away">${awayTeamName}</span>
+                <span><span class="cal-venue ${isHome ? "home" : "away"}">${isHome ? "HOME" : "AWAY"}</span></span>
+              </div>
+            `;
+          }).join("")}
+        </div>
+      `;
+    }).join("")}
+  `;
+  document.getElementById("tabContent").innerHTML = html;
+}
+
 function doSimulateWeek() {
-  const res = simulateWeek();
-  if (res.endOfSeason) {
-    renderEndOfSeason();
-    return;
+  try {
+    const res = simulateWeek();
+    if (res.endOfSeason) {
+      renderEndOfSeason();
+      return;
+    }
+    if (res.userResult) {
+      const r = res.userResult;
+      const isHome = r.homeId === G.userTeamId;
+      const my = isHome ? r.goalsHome : r.goalsAway;
+      const them = isHome ? r.goalsAway : r.goalsHome;
+      const opp = isHome ? G.teams[r.awayId].name : G.teams[r.homeId].name;
+      let outcome = my > them ? "WON" : my < them ? "LOST" : "DREW";
+      toast(`${outcome} ${my}-${them} vs ${opp}`, my > them ? "gold" : my < them ? "error" : "ok");
+      showMatchModal(r);
+    } else {
+      toast(`Week ${G.week - 1} simulated — no fixture this week`, "ok");
+    }
+    renderTab();
+  } catch (err) {
+    console.error("Simulate week failed:", err);
+    toast("Simulation error: " + err.message, "error");
   }
-  // Show match result toast
-  if (res.userResult) {
-    const r = res.userResult;
-    const isHome = r.homeId === G.userTeamId;
-    const my = isHome ? r.goalsHome : r.goalsAway;
-    const them = isHome ? r.goalsAway : r.goalsHome;
-    const opp = isHome ? G.teams[r.awayId].name : G.teams[r.homeId].name;
-    let outcome = my > them ? "WON" : my < them ? "LOST" : "DREW";
-    toast(`${outcome} ${my}-${them} vs ${opp}`, my > them ? "gold" : my < them ? "error" : "ok");
-    showMatchModal(r);
-  }
-  renderTab();
 }
 
 function showMatchModal(r) {
