@@ -177,6 +177,142 @@
     font-weight: 700;
     margin-right: 4px;
   }
+  /* TEAM / PITCH */
+  .pitch {
+    position: relative;
+    background:
+      linear-gradient(0deg, #1e5a2a 0%, #226632 50%, #1e5a2a 100%);
+    background-color: #1e5a2a;
+    border: 2px solid #2c8a3d;
+    border-radius: 10px;
+    aspect-ratio: 2 / 3;
+    max-width: 480px;
+    margin: 0 auto;
+    overflow: hidden;
+  }
+  .pitch::before {
+    content: "";
+    position: absolute; inset: 0;
+    background-image:
+      linear-gradient(0deg, transparent 0, transparent 9%, rgba(255,255,255,0.04) 9%, rgba(255,255,255,0.04) 10%, transparent 10%, transparent 50%, rgba(255,255,255,0.04) 50%, rgba(255,255,255,0.04) 51%, transparent 51%);
+    pointer-events: none;
+  }
+  .pitch::after {
+    content: "";
+    position: absolute;
+    left: 50%; top: 50%;
+    transform: translate(-50%, -50%);
+    width: 28%; aspect-ratio: 1;
+    border: 2px solid rgba(255,255,255,0.2);
+    border-radius: 50%;
+    pointer-events: none;
+  }
+  .pitch-box {
+    position: absolute;
+    left: 25%; right: 25%;
+    height: 14%;
+    border: 2px solid rgba(255,255,255,0.2);
+    border-top: none;
+  }
+  .pitch-box.top { top: 0; border: 2px solid rgba(255,255,255,0.2); border-bottom: none; }
+  .pitch-box.bottom { bottom: 0; }
+  .pitch-slot {
+    position: absolute;
+    transform: translate(-50%, -50%);
+    text-align: center;
+    z-index: 2;
+  }
+  .pitch-slot img {
+    width: 38px; height: 38px;
+    border-radius: 50%;
+    border: 2px solid rgba(255,255,255,0.6);
+    background: #161b22;
+    display: block;
+    margin: 0 auto;
+  }
+  .pitch-slot .pname {
+    font-size: 9px;
+    color: #fff;
+    margin-top: 2px;
+    text-shadow: 0 1px 2px rgba(0,0,0,0.7);
+    max-width: 80px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .pitch-slot .ppos {
+    font-size: 8px;
+    color: #d29922;
+    font-weight: 700;
+  }
+  .pitch-slot .prating {
+    font-size: 10px;
+    background: #d29922;
+    color: #000;
+    border-radius: 6px;
+    padding: 0 4px;
+    font-weight: 700;
+    display: inline-block;
+    margin-top: 1px;
+  }
+  .formation-bar {
+    display: flex;
+    justify-content: space-around;
+    margin-top: 12px;
+    padding: 10px;
+    background: #161b22;
+    border-radius: 8px;
+  }
+  .formation-bar select {
+    background: #0d1117;
+    color: #e6edf3;
+    border: 1px solid #30363d;
+    padding: 6px 10px;
+    border-radius: 6px;
+  }
+  .subs-list {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+    gap: 8px;
+    margin-top: 12px;
+  }
+  .sub-card {
+    background: #161b22;
+    border: 1px solid #30363d;
+    border-radius: 8px;
+    padding: 10px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .sub-card img { width: 32px; height: 32px; border-radius: 50%; }
+  .sub-card .info { flex: 1; min-width: 0; }
+  .sub-card .nm { font-size: 12px; font-weight: 600; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .sub-card .mt { font-size: 10px; color: #8b949e; }
+
+  /* CUP BANNERS */
+  .cup-banner {
+    border-radius: 8px;
+    padding: 10px 14px;
+    margin-bottom: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    color: #fff;
+    font-weight: 700;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+    font-size: 14px;
+  }
+  .cup-banner .cup-name { letter-spacing: 1px; }
+  .cup-banner .cup-round { font-size: 11px; opacity: 0.85; font-weight: 400; }
+  .cup-fa { background: linear-gradient(135deg, #1e88e5, #1565c0); }
+  .cup-fa.headline { border-left: 4px solid #fff; }
+  .cup-carabao { background: linear-gradient(135deg, #fbc02d, #f57f17); color: #000; }
+  .cup-cl { background: linear-gradient(135deg, #283593, #1a237e); }
+  .cup-el { background: linear-gradient(135deg, #ef6c00, #bf360c); }
+  .cup-conf { background: linear-gradient(135deg, #388e3c, #1b5e20); }
+  .standings tr.you td { background: rgba(210, 153, 34, 0.12); font-weight: 700; }
+
   /* CALENDAR */
   .cal-month {
     background: #161b22;
@@ -630,6 +766,7 @@
   <div class="tab-bar">
     <button class="tab active" onclick="switchTab('advance')">ADVANCE</button>
     <button class="tab" onclick="switchTab('calendar')">CALENDAR</button>
+    <button class="tab" onclick="switchTab('team')">TEAM</button>
     <button class="tab" onclick="switchTab('market')">MARKET</button>
     <button class="tab" onclick="switchTab('youth')">YOUTH</button>
     <button class="tab" onclick="switchTab('standings')">STANDINGS</button>
@@ -813,24 +950,27 @@ function defaultState() {
     userTeamId: null,
     budget: 0,
     weeklyWages: 0,
-    myPlayers: [],   // array of player ids
-    myCoaches: [],   // array of coach ids
-    transferList: [], // player ids
-    incomingBids: [], // {playerId, teamId, offer}
-    youthPlayers: [], // discovered youth players (objects)
-    scoutingMission: null, // {region, weeksLeft, totalWeeks}
+    myPlayers: [],
+    myCoaches: [],
+    transferList: [],
+    incomingBids: [],
+    youthPlayers: [],
+    scoutingMission: null,
     messages: [],
     awards: [],
-    teams: {},       // {teamId: {...}}
-    players: {},     // {playerId: {...}}
-    coaches: {},     // {coachId: {...}}
-    fixtures: {},    // {division: [{round, matches: [[homeId,awayId],...]}]}
-    standings: {},   // {division: {teamId: {p,w,d,l,gf,ga,pts}}}
-    results: [],     // recent results history
+    teams: {},
+    players: {},
+    coaches: {},
+    fixtures: {},
+    standings: {},
+    results: [],
     lastMonthResultsCount: 0,
     monthlyAwardsGiven: 0,
-    playerStats: {}, // {playerId: {apps,goals,assists,cleanSheets,rating}}
-    careerStats: {}, // {playerId: {apps,goals,assists,cleanSheets}}
+    playerStats: {},
+    careerStats: {},
+    userFormation: null,
+    cupMatches: [],      // [{ week, cup, round, opponentId, isHome, played, result }]
+    cupResults: {},      // { 'fa': {status: 'in'|'out', round: 'R5'}, ... }
     nextId: 1
   };
 }
@@ -1130,6 +1270,20 @@ function setupAllFixtures() {
   });
 }
 
+// Team rating used for displaying star strength on tables and team cards
+function teamRating(team) {
+  if (!team) return 50;
+  const pids = team.id === G.userTeamId ? (G.myPlayers || []) : (team.players || []);
+  const players = pids.map(id => G.players[id]).filter(p => p);
+  if (players.length === 0) {
+    // fall back to AI coach rating tier for empty AI squads
+    return team.coachHeadRating || 60;
+  }
+  // Average rating of the top 11 highest-rated players (the realistic XI)
+  const sorted = [...players].sort((a, b) => b.rating - a.rating).slice(0, 11);
+  return sorted.reduce((s, p) => s + p.rating, 0) / sorted.length;
+}
+
 // --- TEAM STRENGTH ---
 function getTeamStrength(teamId) {
   const team = G.teams[teamId];
@@ -1341,6 +1495,61 @@ function simulateWeek() {
       });
     }
   });
+  // Cup match for this week
+  const cupMatch = getCupMatchForWeek(G.week);
+  let cupResult = null;
+  if (cupMatch) {
+    try {
+      const homeId = cupMatch.isHome ? G.userTeamId : cupMatch.opponentId;
+      const awayId = cupMatch.isHome ? cupMatch.opponentId : G.userTeamId;
+      const r = simulateMatch(homeId, awayId);
+      if (r) {
+        cupResult = { ...r, cup: cupMatch.cup, round: cupMatch.round };
+        cupMatch.played = true;
+        cupMatch.result = { goalsHome: r.goalsHome, goalsAway: r.goalsAway };
+        // Determine if user advanced
+        const myGoals = cupMatch.isHome ? r.goalsHome : r.goalsAway;
+        const theirGoals = cupMatch.isHome ? r.goalsAway : r.goalsHome;
+        if (myGoals < theirGoals) {
+          // Eliminated — knock out all future rounds of this cup
+          (G.cupMatches || []).forEach(m => {
+            if (m.cup === cupMatch.cup && m.week > G.week) m.eliminated = true;
+          });
+          G.cupResults[cupMatch.cup] = { status: "out", round: cupMatch.round };
+          addMessage("Cup", `Knocked out of ${CUP_INFO[cupMatch.cup].name} at the ${cupMatch.round}.`);
+        } else if (myGoals === theirGoals) {
+          // Draw on penalties — 50/50
+          if (Math.random() < 0.5) {
+            (G.cupMatches || []).forEach(m => {
+              if (m.cup === cupMatch.cup && m.week > G.week) m.eliminated = true;
+            });
+            G.cupResults[cupMatch.cup] = { status: "out", round: cupMatch.round };
+            addMessage("Cup", `Knocked out of ${CUP_INFO[cupMatch.cup].name} on penalties at the ${cupMatch.round}.`);
+          } else {
+            addMessage("Cup", `Through to the next round of ${CUP_INFO[cupMatch.cup].name} on penalties!`);
+            if (cupMatch.round === "FINAL") {
+              G.cupResults[cupMatch.cup] = { status: "won" };
+              addMessage("Cup", `🏆 WON THE ${CUP_INFO[cupMatch.cup].name}!`);
+            }
+          }
+        } else {
+          if (cupMatch.round === "FINAL") {
+            G.cupResults[cupMatch.cup] = { status: "won" };
+            addMessage("Cup", `🏆 WON THE ${CUP_INFO[cupMatch.cup].name}!`);
+            const prize = cupMatch.cup === "cl" ? 100e6 : cupMatch.cup === "fa" ? 2e6 : cupMatch.cup === "carabao" ? 200e3 : 5e6;
+            G.budget += prize;
+          } else {
+            addMessage("Cup", `Through to the next round of ${CUP_INFO[cupMatch.cup].name}!`);
+          }
+        }
+        // Find best player of cup match for the user
+        const myCupBest = cupMatch.isHome ? r.homeBest : r.awayBest;
+        if (myCupBest) cupResult.myBest = myCupBest;
+      }
+    } catch (e) {
+      console.error("Cup match failed:", e);
+    }
+  }
   // Decrement morale boosts & contracts
   G.myPlayers.forEach(id => {
     const p = G.players[id];
@@ -1388,10 +1597,10 @@ function simulateWeek() {
   const totalWeeks = G.division === "Premier League" ? 38 : 46;
   if (G.week > totalWeeks) {
     endSeason();
-    return { userResult, allResults, endOfSeason: true };
+    return { userResult, allResults, cupResult, endOfSeason: true };
   }
   saveGame();
-  return { userResult, allResults, endOfSeason: false };
+  return { userResult, allResults, cupResult, endOfSeason: false };
 }
 
 function computeWeeklyWages() {
@@ -1758,13 +1967,13 @@ function renderTeamSelect() {
   const grid = document.getElementById("teamGrid");
   const champTeams = Object.values(G.teams).filter(t => t.division === "Championship");
   // Every team starts with £200M budget regardless of tier
-  champTeams.forEach(t => { t.startBudget = 200e6; });
+  champTeams.forEach(t => { t.startBudget = 50e6; });
   grid.innerHTML = champTeams.map(t => `
     <div class="team-card" onclick="selectTeam(${t.id})">
       <div class="name">${t.name}</div>
       <div class="city">${t.city}</div>
       <div class="fact">${t.fact}</div>
-      <div class="budget">Starting Budget: £200M</div>
+      <div class="budget">Starting Budget: £50M</div>
     </div>
   `).join("");
 }
@@ -1772,7 +1981,7 @@ function renderTeamSelect() {
 function selectTeam(teamId) {
   G.userTeamId = teamId;
   const team = G.teams[teamId];
-  G.budget = 200e6; // Starting budget: £200M
+  G.budget = 50e6; // Starting budget: £50M
   G.division = "Championship";
   // Build AI squads for ALL teams except user
   Object.values(G.teams).forEach(t => {
@@ -1781,8 +1990,76 @@ function selectTeam(teamId) {
   // Guarantee a healthy free-agent pool for the user
   ensureFreeAgentPool();
   setupAllFixtures();
+  generateCupSchedule();
   renderSetupPlayers();
   showScreen("playerSetup");
+}
+
+// Generate cup matches for the user across the season
+function generateCupSchedule() {
+  G.cupMatches = [];
+  G.cupResults = {};
+  const otherTeams = Object.values(G.teams).filter(t => t.id !== G.userTeamId);
+  // Define cup ladders — each item: { cup, round, week }
+  const carabaoSchedule = [
+    { cup: "carabao", round: "R1", week: 4 },
+    { cup: "carabao", round: "R2", week: 8 },
+    { cup: "carabao", round: "R3", week: 12 },
+    { cup: "carabao", round: "QF", week: 17 },
+    { cup: "carabao", round: "SF", week: 22 },
+    { cup: "carabao", round: "FINAL", week: 30 }
+  ];
+  const faSchedule = [
+    { cup: "fa", round: "R3", week: 14 },
+    { cup: "fa", round: "R4", week: 19 },
+    { cup: "fa", round: "R5", week: 25 },
+    { cup: "fa", round: "QF", week: 31 },
+    { cup: "fa", round: "SF", week: 38 },
+    { cup: "fa", round: "FINAL", week: 45 }
+  ];
+  // European cups only for Premier League sides
+  let euroSchedule = [];
+  if (G.division === "Premier League") {
+    euroSchedule = [
+      { cup: "cl", round: "GS1", week: 5 },
+      { cup: "cl", round: "GS2", week: 7 },
+      { cup: "cl", round: "GS3", week: 10 },
+      { cup: "cl", round: "GS4", week: 15 },
+      { cup: "cl", round: "GS5", week: 18 },
+      { cup: "cl", round: "GS6", week: 21 },
+      { cup: "cl", round: "R16", week: 26 },
+      { cup: "cl", round: "QF", week: 32 },
+      { cup: "cl", round: "SF", week: 36 },
+      { cup: "cl", round: "FINAL", week: 42 }
+    ];
+  }
+  const all = [...carabaoSchedule, ...faSchedule, ...euroSchedule];
+  all.forEach(({ cup, round, week }) => {
+    const opponent = pick(otherTeams);
+    G.cupMatches.push({
+      week, cup, round,
+      opponentId: opponent.id,
+      isHome: Math.random() < 0.5,
+      played: false,
+      eliminated: false
+    });
+  });
+  G.cupResults = { fa: { status: "in" }, carabao: { status: "in" }, cl: { status: G.division === "Premier League" ? "in" : "n/a" } };
+}
+
+const CUP_INFO = {
+  fa:      { name: "FA CUP",                 cls: "cup-fa" },
+  carabao: { name: "CARABAO CUP",            cls: "cup-carabao" },
+  cl:      { name: "UEFA CHAMPIONS LEAGUE",  cls: "cup-cl" },
+  el:      { name: "UEFA EUROPA LEAGUE",     cls: "cup-el" },
+  conf:    { name: "UEFA CONFERENCE LEAGUE", cls: "cup-conf" }
+};
+
+function getCupMatchForWeek(week) {
+  return (G.cupMatches || []).find(m => m.week === week && !m.eliminated && !m.played);
+}
+function getPlayedCupMatchForWeek(week) {
+  return (G.cupMatches || []).find(m => m.week === week && m.played);
 }
 
 function ensureFreeAgentPool() {
@@ -1989,6 +2266,7 @@ function renderTab() {
   switch(currentTab) {
     case "advance": renderAdvance(); break;
     case "calendar": renderCalendar(); break;
+    case "team": renderTeam(); break;
     case "market": renderMarket(); break;
     case "youth": renderYouth(); break;
     case "standings": renderStandings(); break;
@@ -2019,7 +2297,18 @@ function renderAdvance() {
     recentMatches = last.results.filter(r => r.division === G.division).map(r => resultRowHTML(r)).join("");
   }
 
+  const cupMatch = getCupMatchForWeek(G.week);
+  const cupBanner = cupMatch ? `
+    <div class="cup-banner ${CUP_INFO[cupMatch.cup].cls}">
+      <div>
+        <div class="cup-name">${CUP_INFO[cupMatch.cup].name}</div>
+        <div class="cup-round">${cupMatch.round} · ${cupMatch.isHome ? "HOME" : "AWAY"} vs ${G.teams[cupMatch.opponentId] ? G.teams[cupMatch.opponentId].name : "—"}</div>
+      </div>
+      <div style="font-size:24px;">${cupMatch.cup === 'fa' ? '🏆' : cupMatch.cup === 'carabao' ? '🏅' : '⭐'}</div>
+    </div>
+  ` : "";
   const html = `
+    ${cupBanner}
     <div class="card">
       <div class="card-title">Week ${G.week} of ${totalWeeks}</div>
       ${myFix ? `
@@ -2145,11 +2434,28 @@ function renderCalendar() {
   }
 
   const teamName = G.teams[G.userTeamId].name;
+  // Index cup matches by week for quick lookup
+  const cupByWeek = {};
+  (G.cupMatches || []).forEach(m => {
+    if (!m.eliminated) {
+      if (!cupByWeek[m.week]) cupByWeek[m.week] = [];
+      cupByWeek[m.week].push(m);
+    }
+  });
+
+  const cupLegend = `
+    <div style="display:flex; gap:8px; flex-wrap:wrap; margin-top:10px;">
+      <span class="cup-banner cup-fa" style="margin:0; padding:4px 8px; font-size:11px;">FA CUP</span>
+      <span class="cup-banner cup-carabao" style="margin:0; padding:4px 8px; font-size:11px;">CARABAO CUP</span>
+      ${G.division === "Premier League" ? `<span class="cup-banner cup-cl" style="margin:0; padding:4px 8px; font-size:11px;">CHAMPIONS LEAGUE</span>` : ""}
+    </div>
+  `;
 
   const html = `
     <div class="card" style="margin-bottom:14px;">
       <div class="card-title">Season ${G.seasonYear}-${(G.seasonYear+1).toString().slice(2)} · ${G.division}</div>
-      <div style="color:#8b949e; font-size:13px;">All ${teamName} fixtures for the season. Current week is highlighted in gold.</div>
+      <div style="color:#8b949e; font-size:13px;">All ${teamName} fixtures for the season. Cup matches have colored headlines. Current week is highlighted in gold.</div>
+      ${cupLegend}
     </div>
     ${months.map(m => {
       if (m.weeks.length === 0) return "";
@@ -2180,7 +2486,7 @@ function renderCalendar() {
             }
             const homeTeamName = isHome ? teamName : opp;
             const awayTeamName = isHome ? opp : teamName;
-            return `
+            const leagueRow = `
               <div class="cal-week-row ${rowClass}">
                 <span class="cal-week-num">Wk ${week}</span>
                 <span class="cal-home">${homeTeamName}</span>
@@ -2189,12 +2495,229 @@ function renderCalendar() {
                 <span><span class="cal-venue ${isHome ? "home" : "away"}">${isHome ? "HOME" : "AWAY"}</span></span>
               </div>
             `;
+            // Cup banner(s) appearing in the same week
+            const cupRows = (cupByWeek[week] || []).map(cm => {
+              const ci = CUP_INFO[cm.cup];
+              const cOpp = G.teams[cm.opponentId] ? G.teams[cm.opponentId].name : "—";
+              let cScore;
+              if (cm.played && cm.result) {
+                const myG = cm.isHome ? cm.result.goalsHome : cm.result.goalsAway;
+                const thG = cm.isHome ? cm.result.goalsAway : cm.result.goalsHome;
+                const cls = myG > thG ? "win" : myG < thG ? "loss" : "draw";
+                cScore = `<div class="cal-score ${cls}">${cm.result.goalsHome}-${cm.result.goalsAway}</div>`;
+              } else {
+                cScore = `<div class="cal-score future">vs</div>`;
+              }
+              const cHome = cm.isHome ? teamName : cOpp;
+              const cAway = cm.isHome ? cOpp : teamName;
+              return `
+                <div class="cup-banner ${ci.cls}" style="margin:6px 0 6px 0; padding:6px 10px; font-size:12px;">
+                  <div>
+                    <span class="cup-name">${ci.name}</span>
+                    <span class="cup-round" style="margin-left:6px;">· ${cm.round}</span>
+                  </div>
+                </div>
+                <div class="cal-week-row you ${cm.played ? 'played' : 'upcoming'}">
+                  <span class="cal-week-num">Wk ${week}</span>
+                  <span class="cal-home">${cHome}</span>
+                  ${cScore}
+                  <span class="cal-away">${cAway}</span>
+                  <span><span class="cal-venue ${cm.isHome ? "home" : "away"}">${cm.isHome ? "HOME" : "AWAY"}</span></span>
+                </div>
+              `;
+            }).join("");
+            return leagueRow + cupRows;
           }).join("")}
         </div>
       `;
     }).join("")}
   `;
   document.getElementById("tabContent").innerHTML = html;
+}
+
+// --- TEAM / FORMATION TAB ---
+const FORMATIONS = {
+  "4-3-3": {
+    name: "4-3-3",
+    slots: [
+      { role: "GK",  groups: ["GK"],            x: 50, y: 92 },
+      { role: "LB",  groups: ["LB","LWB","CB"], x: 15, y: 73 },
+      { role: "CB",  groups: ["CB","SW"],       x: 38, y: 76 },
+      { role: "CB",  groups: ["CB","SW"],       x: 62, y: 76 },
+      { role: "RB",  groups: ["RB","RWB","CB"], x: 85, y: 73 },
+      { role: "CM",  groups: ["CM","CDM","CAM"],x: 25, y: 52 },
+      { role: "CM",  groups: ["CM","CDM"],      x: 50, y: 55 },
+      { role: "CM",  groups: ["CM","CAM"],      x: 75, y: 52 },
+      { role: "LW",  groups: ["LW","LM"],       x: 18, y: 26 },
+      { role: "ST",  groups: ["ST","CF","SS"],  x: 50, y: 18 },
+      { role: "RW",  groups: ["RW","RM"],       x: 82, y: 26 }
+    ]
+  },
+  "4-4-2": {
+    name: "4-4-2",
+    slots: [
+      { role: "GK",  groups: ["GK"],            x: 50, y: 92 },
+      { role: "LB",  groups: ["LB","LWB","CB"], x: 15, y: 73 },
+      { role: "CB",  groups: ["CB","SW"],       x: 38, y: 76 },
+      { role: "CB",  groups: ["CB","SW"],       x: 62, y: 76 },
+      { role: "RB",  groups: ["RB","RWB","CB"], x: 85, y: 73 },
+      { role: "LM",  groups: ["LM","LW"],       x: 15, y: 48 },
+      { role: "CM",  groups: ["CM","CDM"],      x: 38, y: 52 },
+      { role: "CM",  groups: ["CM","CAM"],      x: 62, y: 52 },
+      { role: "RM",  groups: ["RM","RW"],       x: 85, y: 48 },
+      { role: "ST",  groups: ["ST","CF","SS"],  x: 36, y: 20 },
+      { role: "ST",  groups: ["ST","CF","SS"],  x: 64, y: 20 }
+    ]
+  },
+  "4-2-3-1": {
+    name: "4-2-3-1",
+    slots: [
+      { role: "GK",  groups: ["GK"],            x: 50, y: 92 },
+      { role: "LB",  groups: ["LB","LWB","CB"], x: 15, y: 73 },
+      { role: "CB",  groups: ["CB","SW"],       x: 38, y: 76 },
+      { role: "CB",  groups: ["CB","SW"],       x: 62, y: 76 },
+      { role: "RB",  groups: ["RB","RWB","CB"], x: 85, y: 73 },
+      { role: "CDM", groups: ["CDM","CM"],      x: 36, y: 56 },
+      { role: "CDM", groups: ["CDM","CM"],      x: 64, y: 56 },
+      { role: "LW",  groups: ["LW","LM","CAM"], x: 18, y: 34 },
+      { role: "CAM", groups: ["CAM","CM","SS"], x: 50, y: 36 },
+      { role: "RW",  groups: ["RW","RM","CAM"], x: 82, y: 34 },
+      { role: "ST",  groups: ["ST","CF","SS"],  x: 50, y: 16 }
+    ]
+  },
+  "3-5-2": {
+    name: "3-5-2",
+    slots: [
+      { role: "GK",  groups: ["GK"],            x: 50, y: 92 },
+      { role: "CB",  groups: ["CB","SW"],       x: 25, y: 76 },
+      { role: "CB",  groups: ["CB","SW"],       x: 50, y: 78 },
+      { role: "CB",  groups: ["CB","SW"],       x: 75, y: 76 },
+      { role: "LWB", groups: ["LWB","LB","LM"], x: 12, y: 52 },
+      { role: "CM",  groups: ["CM","CDM"],      x: 32, y: 54 },
+      { role: "CM",  groups: ["CM","CAM"],      x: 50, y: 56 },
+      { role: "CM",  groups: ["CM","CAM"],      x: 68, y: 54 },
+      { role: "RWB", groups: ["RWB","RB","RM"], x: 88, y: 52 },
+      { role: "ST",  groups: ["ST","CF","SS"],  x: 36, y: 20 },
+      { role: "ST",  groups: ["ST","CF","SS"],  x: 64, y: 20 }
+    ]
+  }
+};
+
+// Pick the best formation given the user's squad composition
+function pickBestFormation() {
+  const players = G.myPlayers.map(id => G.players[id]).filter(p => p);
+  const have = { LW:0, RW:0, ST:0, CAM:0, CDM:0, LB:0, RB:0, LWB:0, RWB:0, CB:0, CM:0, LM:0, RM:0, CF:0, SS:0, SW:0, GK:0 };
+  players.forEach(p => { if (have[p.position] !== undefined) have[p.position]++; });
+  // Quick heuristic
+  if (have.LW >= 1 && have.RW >= 1) return "4-3-3";
+  if ((have.LWB + have.RWB) >= 1 && have.CB >= 3) return "3-5-2";
+  if ((have.CAM + have.SS) >= 1 && have.CDM >= 1) return "4-2-3-1";
+  return "4-4-2";
+}
+
+// For a given formation, assign the best-fitting players to each slot (no duplicates)
+function pickStartingXI(formationKey) {
+  const formation = FORMATIONS[formationKey];
+  const players = G.myPlayers.map(id => G.players[id]).filter(p => p);
+  const used = new Set();
+  const lineup = [];
+  formation.slots.forEach(slot => {
+    // Find the best player whose primary position group matches any slot.groups
+    const candidates = players.filter(p => !used.has(p.id) && slot.groups.includes(p.position));
+    let chosen;
+    if (candidates.length) {
+      candidates.sort((a, b) => b.rating - a.rating);
+      chosen = candidates[0];
+    } else {
+      // Fallback: any unused player matching the position group family
+      const fallback = players.filter(p => !used.has(p.id));
+      fallback.sort((a, b) => b.rating - a.rating);
+      chosen = fallback[0] || null;
+    }
+    if (chosen) used.add(chosen.id);
+    lineup.push({ slot, player: chosen });
+  });
+  const subs = players.filter(p => !used.has(p.id)).sort((a, b) => b.rating - a.rating);
+  return { lineup, subs };
+}
+
+function renderTeam() {
+  const headCoach = G.myCoaches.map(id => G.coaches[id]).find(c => c && c.role === "Head Coach");
+  if (!G.userFormation) G.userFormation = pickBestFormation();
+  const formationKey = G.userFormation;
+  const { lineup, subs } = pickStartingXI(formationKey);
+  const myTeamRating = teamRating(G.teams[G.userTeamId]);
+
+  const formationOptions = Object.keys(FORMATIONS).map(k =>
+    `<option value="${k}" ${k === formationKey ? 'selected' : ''}>${k}</option>`
+  ).join("");
+
+  const html = `
+    <div class="card">
+      <div class="card-title">${G.teams[G.userTeamId].name} — Starting XI</div>
+      <div style="display:flex; gap:14px; flex-wrap:wrap; align-items:center; margin-bottom:10px;">
+        <div>
+          <div class="stat-label">Head Coach</div>
+          <div style="font-weight:700;">${headCoach ? headCoach.name : "— None hired —"}</div>
+        </div>
+        <div>
+          <div class="stat-label">Squad Strength</div>
+          <div>${starsHTML(myTeamRating)}</div>
+        </div>
+        <div>
+          <div class="stat-label">Formation</div>
+          <select onchange="setFormation(this.value)" style="background:#0d1117; color:#e6edf3; border:1px solid #30363d; padding:6px 10px; border-radius:6px;">
+            ${formationOptions}
+          </select>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="pitch">
+        <div class="pitch-box top"></div>
+        <div class="pitch-box bottom"></div>
+        ${lineup.map(({ slot, player }) => `
+          <div class="pitch-slot" style="left:${slot.x}%; top:${slot.y}%;">
+            ${player ? `
+              <img src="${player.avatar}" alt="">
+              <div class="ppos">${slot.role}</div>
+              <div class="pname">${player.lastName || player.name}</div>
+              <div class="prating">${player.rating}</div>
+            ` : `
+              <div style="width:38px; height:38px; border-radius:50%; border:2px dashed rgba(255,255,255,0.3); margin:0 auto;"></div>
+              <div class="ppos">${slot.role}</div>
+              <div class="pname" style="color:#aaa;">(empty)</div>
+            `}
+          </div>
+        `).join("")}
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Substitutes (${subs.length})</div>
+      ${subs.length === 0 ? '<div style="color:#8b949e;">No substitutes — your full squad is starting.</div>' : `
+        <div class="subs-list">
+          ${subs.map(p => `
+            <div class="sub-card">
+              <img src="${p.avatar}" alt="">
+              <div class="info">
+                <div class="nm">${p.name}</div>
+                <div class="mt"><span class="player-pos">${p.position}</span> · Rating ${p.rating}</div>
+              </div>
+            </div>
+          `).join("")}
+        </div>
+      `}
+    </div>
+  `;
+  document.getElementById("tabContent").innerHTML = html;
+}
+
+function setFormation(key) {
+  G.userFormation = key;
+  saveGame();
+  renderTeam();
 }
 
 // Repair game state if anything required is missing — old saves, post-promotion, etc.
@@ -2258,7 +2781,10 @@ function doSimulateWeek() {
       const opp = isHome ? G.teams[r.awayId].name : G.teams[r.homeId].name;
       let outcome = my > them ? "WON" : my < them ? "LOST" : "DREW";
       toast(`${outcome} ${my}-${them} vs ${opp}`, my > them ? "gold" : my < them ? "error" : "ok");
-      showMatchModal(r);
+      showMatchModal(r, res.cupResult);
+    } else if (res.cupResult) {
+      // Only a cup match this week
+      showMatchModal(res.cupResult, res.cupResult);
     } else {
       toast(`Week ${G.week - 1} simulated — no fixture this week`, "ok");
     }
@@ -2270,7 +2796,7 @@ function doSimulateWeek() {
   }
 }
 
-function showMatchModal(r) {
+function showMatchModal(r, cupCtx) {
   const isHome = r.homeId === G.userTeamId;
   const my = isHome ? r.goalsHome : r.goalsAway;
   const them = isHome ? r.goalsAway : r.goalsHome;
@@ -2282,6 +2808,8 @@ function showMatchModal(r) {
   const theirRatings = isHome ? r.awayMatchRatings : r.homeMatchRatings;
   const myBest = isHome ? r.homeBest : r.awayBest;
   const theirBest = isHome ? r.awayBest : r.homeBest;
+  const isCup = cupCtx && cupCtx.cup;
+  const cupInfo = isCup ? CUP_INFO[cupCtx.cup] : null;
   // Player of the Match = higher rated of the two
   const motm = (myBest && theirBest)
     ? (myBest.rating >= theirBest.rating ? { ...myBest, team: myName, isYou: true } : { ...theirBest, team: opp, isYou: false })
@@ -2296,7 +2824,16 @@ function showMatchModal(r) {
   const ratingColor = rt => rt >= 8.5 ? "#d29922" : rt >= 7.5 ? "#2ea043" : rt >= 6.5 ? "#e6edf3" : "#8b949e";
   const html = `
     <button class="modal-close" onclick="closeModal()">×</button>
-    <div class="match-display" style="margin:0 0 16px 0;">
+    ${isCup ? `
+      <div class="cup-banner ${cupInfo.cls}" style="margin-bottom:0; border-radius:8px 8px 0 0;">
+        <div>
+          <div class="cup-name">${cupInfo.name}</div>
+          <div class="cup-round">${cupCtx.round}</div>
+        </div>
+        <div style="font-size:24px;">${cupCtx.cup === 'fa' ? '🏆' : cupCtx.cup === 'carabao' ? '🏅' : '⭐'}</div>
+      </div>
+    ` : ""}
+    <div class="match-display" style="margin:0 0 16px 0; ${isCup ? "border-radius:0 0 8px 8px;" : ""}">
       <div class="match-info">FULL TIME · Week ${r.week}</div>
       <div class="match-teams">${isHome ? myName : opp}<br>vs<br>${isHome ? opp : myName}</div>
       <div class="match-score" style="color:${my > them ? '#2ea043' : my < them ? '#f85149' : '#d29922'};">${r.goalsHome} - ${r.goalsAway}</div>
@@ -2771,7 +3308,7 @@ function renderStandingsTable(division) {
   return `
     <div class="card" style="padding:0; overflow-x:auto;">
       <table class="standings">
-        <thead><tr><th>#</th><th>Team</th><th>P</th><th>W</th><th>D</th><th>L</th><th>GF</th><th>GA</th><th>GD</th><th>Pts</th></tr></thead>
+        <thead><tr><th>#</th><th>Team</th><th>Strength</th><th>P</th><th>W</th><th>D</th><th>L</th><th>GF</th><th>GA</th><th>GD</th><th>Pts</th></tr></thead>
         <tbody>
           ${list.map((s, i) => {
             const team = G.teams[s.teamId];
@@ -2783,6 +3320,7 @@ function renderStandingsTable(division) {
             return `<tr class="${cls}">
               <td>${i+1}</td>
               <td>${team.name}</td>
+              <td>${starsHTML(teamRating(team))}</td>
               <td>${s.p}</td><td>${s.w}</td><td>${s.d}</td><td>${s.l}</td>
               <td>${s.gf}</td><td>${s.ga}</td><td>${s.gf-s.ga>0?'+':''}${s.gf-s.ga}</td>
               <td><b>${s.pts}</b></td>
