@@ -512,15 +512,11 @@
       <option value="FWD">Forwards</option>
     </select>
     <select id="setupStarFilter" onchange="renderSetupPlayers()">
-      <option value="0">All Ratings</option>
+      <option value="0">All Ratings (1.5★ – 3★)</option>
       <option value="3">1.5★+</option>
       <option value="4">2★+</option>
       <option value="5">2.5★+</option>
-      <option value="6">3★+</option>
-      <option value="7">3.5★+</option>
-      <option value="8">4★+</option>
-      <option value="9">4.5★+</option>
-      <option value="10">5★ only</option>
+      <option value="6">3★ only</option>
     </select>
   </div>
   <div class="player-grid" id="setupPlayerGrid"></div>
@@ -823,7 +819,10 @@ function ratingToValue(rating, age) {
   else base = rand(10e3, 100e3);
   if (age < 23) base *= 1.5;
   else if (age > 30) base *= 0.7;
-  return Math.round(base);
+  const final = Math.round(base);
+  // 3 stars and under (rating <= 64) hard-capped at £10M
+  if (rating <= 64) return Math.min(final, 10e6);
+  return final;
 }
 
 function ratingToWage(rating) {
@@ -1623,18 +1622,14 @@ function continueGame() {
 function renderTeamSelect() {
   const grid = document.getElementById("teamGrid");
   const champTeams = Object.values(G.teams).filter(t => t.division === "Championship");
-  // Assign budgets by tier
-  champTeams.forEach(t => {
-    if (t.tier === 1) t.startBudget = randInt(18e6, 22e6);
-    else if (t.tier === 2) t.startBudget = randInt(12e6, 18e6);
-    else t.startBudget = randInt(8e6, 12e6);
-  });
+  // Every team starts with £200M budget regardless of tier
+  champTeams.forEach(t => { t.startBudget = 200e6; });
   grid.innerHTML = champTeams.map(t => `
     <div class="team-card" onclick="selectTeam(${t.id})">
       <div class="name">${t.name}</div>
       <div class="city">${t.city}</div>
       <div class="fact">${t.fact}</div>
-      <div class="budget">Budget: ${fmtMoney(t.startBudget)}</div>
+      <div class="budget">Starting Budget: £200M</div>
     </div>
   `).join("");
 }
@@ -1642,7 +1637,7 @@ function renderTeamSelect() {
 function selectTeam(teamId) {
   G.userTeamId = teamId;
   const team = G.teams[teamId];
-  G.budget = team.startBudget;
+  G.budget = 200e6; // Starting budget: £200M
   G.division = "Championship";
   // Build AI squads for ALL teams except user
   Object.values(G.teams).forEach(t => {
@@ -1656,7 +1651,8 @@ function selectTeam(teamId) {
 }
 
 function ensureFreeAgentPool() {
-  const free = Object.values(G.players).filter(p => p.teamId === null);
+  // Only count players in the setup-eligible band (rating 45-64)
+  const free = Object.values(G.players).filter(p => p.teamId === null && p.rating >= 45 && p.rating <= 64);
   const byGroup = { GK: 0, DEF: 0, MID: 0, FWD: 0 };
   free.forEach(p => byGroup[POSITIONS[p.position].group]++);
   const targets = { GK: 25, DEF: 80, MID: 90, FWD: 60 };
@@ -1682,8 +1678,8 @@ function renderSetupPlayers() {
   const search = document.getElementById("setupSearch").value.toLowerCase();
   const posFilter = document.getElementById("setupPosFilter").value;
   const starFilter = parseInt(document.getElementById("setupStarFilter").value);
-  // Free agents are capped at 3 stars (rating <= 64). Higher-rated players must be bought from clubs.
-  const free = Object.values(G.players).filter(p => p.teamId === null && p.rating <= 64);
+  // Setup squad: only show 1.5★ to 3★ players (rating 45-64) — higher must be bought during the season.
+  const free = Object.values(G.players).filter(p => p.teamId === null && p.rating >= 45 && p.rating <= 64);
   let filtered = free;
   if (search) filtered = filtered.filter(p => p.name.toLowerCase().includes(search));
   if (posFilter) filtered = filtered.filter(p => POSITIONS[p.position].group === posFilter);
