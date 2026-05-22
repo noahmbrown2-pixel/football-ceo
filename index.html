@@ -1133,11 +1133,15 @@ function setupAllFixtures() {
 // --- TEAM STRENGTH ---
 function getTeamStrength(teamId) {
   const team = G.teams[teamId];
-  const players = (teamId === G.userTeamId ? G.myPlayers : team.players).map(id => G.players[id]).filter(p => p);
-  if (players.length === 0) return { attack: 50, defense: 50, mid: 50, overall: 50 };
+  if (!team) return { attack: 50, defense: 50, mid: 50, overall: 50, players: [] };
+  const idList = teamId === G.userTeamId ? (G.myPlayers || []) : (team.players || []);
+  const players = idList.map(id => G.players[id]).filter(p => p && p.position && POSITIONS[p.position]);
+  if (players.length === 0) return { attack: 50, defense: 50, mid: 50, overall: 50, players: [] };
   let attRatings = [], midRatings = [], defRatings = [];
   players.forEach(p => {
-    const grp = POSITIONS[p.position].group;
+    const pos = POSITIONS[p.position];
+    if (!pos) return;
+    const grp = pos.group;
     let effRating = p.rating;
     if (p.moraleBoostWeeks > 0) effRating += 3;
     if (grp === "FWD" || p.position === "CAM" || p.position === "LW" || p.position === "RW") attRatings.push(effRating);
@@ -1167,6 +1171,7 @@ function getTeamStrength(teamId) {
 
 // --- MATCH SIMULATION ---
 function simulateMatch(homeId, awayId) {
+  if (!G.teams[homeId] || !G.teams[awayId]) return null;
   const hs = getTeamStrength(homeId);
   const as = getTeamStrength(awayId);
   const homeAdvantage = 5;
@@ -1218,12 +1223,14 @@ function computeMatchRatings(players, scorers, cleanSheet, won, lost) {
     if (s.assistId) assistCount[s.assistId] = (assistCount[s.assistId] || 0) + 1;
   });
   players.forEach(p => {
-    if (!p) return;
-    if (G.playerStats[p.id]) {
-      G.playerStats[p.id].apps++;
-      G.careerStats[p.id].apps++;
-    }
-    const isDefensive = p.position === "GK" || POSITIONS[p.position].group === "DEF";
+    if (!p || !p.position) return;
+    const pos = POSITIONS[p.position];
+    if (!pos) return;
+    if (!G.playerStats[p.id]) G.playerStats[p.id] = { apps:0, goals:0, assists:0, cleanSheets:0, rating:6.5 };
+    if (!G.careerStats[p.id]) G.careerStats[p.id] = { apps:0, goals:0, assists:0, cleanSheets:0 };
+    G.playerStats[p.id].apps++;
+    G.careerStats[p.id].apps++;
+    const isDefensive = p.position === "GK" || pos.group === "DEF";
     const goals = goalCount[p.id] || 0;
     const assists = assistCount[p.id] || 0;
     // Per-match rating: 6.0 base, modulated by player quality, contributions, and result
@@ -1265,18 +1272,22 @@ function findBestPlayer(matchRatings) {
 }
 
 function pickScorers(players, count) {
-  if (count === 0 || players.length === 0) return [];
+  if (count === 0 || !players || players.length === 0) return [];
+  const valid = players.filter(p => p && p.position && POSITIONS[p.position]);
+  if (valid.length === 0) return [];
   const scorers = [];
-  const attackers = players.filter(p => {
-    const g = POSITIONS[p.position].group;
+  const attackers = valid.filter(p => {
+    const pos = POSITIONS[p.position];
+    const g = pos && pos.group;
     return g === "FWD" || g === "MID";
   });
-  const pool = attackers.length ? attackers : players.filter(p => p.position !== "GK");
+  const pool = attackers.length ? attackers : valid.filter(p => p.position !== "GK");
   if (pool.length === 0) return [];
   // Weight by attacking position
   for (let i = 0; i < count; i++) {
     const weights = pool.map(p => {
-      const g = POSITIONS[p.position].group;
+      const pos = POSITIONS[p.position];
+      const g = pos && pos.group;
       let w = 1;
       if (g === "FWD") w = 5;
       else if (p.position === "CAM" || p.position === "LW" || p.position === "RW") w = 3;
@@ -1319,9 +1330,14 @@ function simulateWeek() {
     if (rounds && weekIdx < rounds.length && rounds[weekIdx]) {
       rounds[weekIdx].matches.forEach(([homeId, awayId]) => {
         if (!G.teams[homeId] || !G.teams[awayId]) return;
-        const r = simulateMatch(homeId, awayId);
-        allResults.push(r);
-        if (homeId === G.userTeamId || awayId === G.userTeamId) userResult = r;
+        try {
+          const r = simulateMatch(homeId, awayId);
+          if (!r) return;
+          allResults.push(r);
+          if (homeId === G.userTeamId || awayId === G.userTeamId) userResult = r;
+        } catch (matchErr) {
+          console.error(`Match ${homeId} vs ${awayId} failed:`, matchErr);
+        }
       });
     }
   });
@@ -2033,7 +2049,7 @@ function renderAdvance() {
         <div class="stat-item"><div class="stat-label">Points</div><div class="stat-value">${myStanding.pts}</div></div>
         <div class="stat-item"><div class="stat-label">P/W/D/L</div><div class="stat-value">${myStanding.p} / ${myStanding.w} / ${myStanding.d} / ${myStanding.l}</div></div>
         <div class="stat-item"><div class="stat-label">GF / GA</div><div class="stat-value">${myStanding.gf} / ${myStanding.ga}</div></div>
-        ${next && next.teamId !== G.userTeamId ? `<div class="stat-item"><div class="stat-label">Above</div><div class="stat-value">${G.teams[next.teamId] ? G.teams[next.teamId].name : '—'} (${next.pts}pts)</div></div>` : myRank === 0 ? `<div class="stat-item"><div class="stat-label">Position</div><div class="stat-value">League Leaders!</div></div>` : ""}
+        ${next && next.teamId !== G.userTeamId && G.teams[next.teamId] ? `<div class="stat-item"><div class="stat-label">Above</div><div class="stat-value">${G.teams[next.teamId].name} (${next.pts}pts)</div></div>` : myRank === 0 ? `<div class="stat-item"><div class="stat-label">Position</div><div class="stat-value">League Leaders!</div></div>` : ""}
       </div>
     </div>
 
@@ -2072,6 +2088,7 @@ function getMyLastResults(n) {
 }
 
 function resultRowHTML(r) {
+  if (!r || !G.teams[r.homeId] || !G.teams[r.awayId]) return "";
   const home = G.teams[r.homeId].name;
   const away = G.teams[r.awayId].name;
   const isYou = r.homeId === G.userTeamId || r.awayId === G.userTeamId;
