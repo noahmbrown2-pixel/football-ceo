@@ -772,6 +772,7 @@
     <button class="tab" onclick="switchTab('standings')">STANDINGS</button>
     <button class="tab" onclick="switchTab('roster')">ROSTER</button>
     <button class="tab" onclick="switchTab('inbox')">INBOX</button>
+    <button class="tab" onclick="switchTab('settings')">SETTINGS</button>
   </div>
   <div class="tab-content" id="tabContent"></div>
 </div>
@@ -865,6 +866,172 @@ const LEAGUE_ONE = [
   ["Stockport County","Stockport","Hatters from Edgeley Park"],
   ["Wigan Athletic","Wigan","FA Cup heroes 2013"],
   ["Wycombe Wanderers","High Wycombe","Chairboys from Adams Park"]
+];
+
+// ============================================================
+// EUROPEAN DOMESTIC LEAGUES
+// ============================================================
+const EURO_LEAGUE_DATA = {
+  "Serie A":      { country:"Italy",      flag:"🇮🇹", clSpots:4, elSpots:2, ueclSpots:1, teams:[
+    ["Inter Milan",87],["Atalanta BC",83],["Juventus FC",83],["AC Milan",82],["SSC Napoli",84],
+    ["AS Roma",80],["SS Lazio",78],["ACF Fiorentina",76],["Torino FC",73],["Bologna FC 1909",74],
+    ["Udinese Calcio",70],["Empoli FC",68],["Hellas Verona",67],["Genoa CFC",69],
+    ["Frosinone Calcio",65],["US Lecce",66],["Cagliari Calcio",68],["Monza",71],["Venezia FC",63],["Parma Calcio",65]
+  ]},
+  "LaLiga":       { country:"Spain",      flag:"🇪🇸", clSpots:5, elSpots:2, ueclSpots:1, teams:[
+    ["Real Madrid CF",91],["FC Barcelona",89],["Atlético Madrid",86],["Athletic Club",78],["Villarreal CF",79],
+    ["Real Betis Balompié",77],["Real Sociedad",76],["Sevilla FC",75],["Girona FC",74],
+    ["Rayo Vallecano",70],["CA Osasuna",71],["Celta Vigo",69],["Deportivo Alavés",67],["Valencia CF",73],
+    ["Getafe CF",68],["RCD Espanyol",67],["RCD Mallorca",69],["UD Las Palmas",66],["CD Leganés",65],["Real Valladolid",64]
+  ]},
+  "Bundesliga":   { country:"Germany",    flag:"🇩🇪", clSpots:4, elSpots:1, ueclSpots:1, teams:[
+    ["FC Bayern Munich",89],["Bayer 04 Leverkusen",86],["Borussia Dortmund",85],["RB Leipzig",84],
+    ["Eintracht Frankfurt",80],["VfB Stuttgart",79],["SC Freiburg",77],["FSV Mainz 05",75],
+    ["VfL Wolfsburg",74],["Werder Bremen",73],["Borussia M'gladbach",76],["FC Augsburg",70],
+    ["1. FC Union Berlin",72],["TSG Hoffenheim",71],["VfL Bochum",68],["1. FC Köln",69],
+    ["FC Heidenheim",67],["SV Darmstadt 98",65]
+  ]},
+  "Ligue 1":      { country:"France",     flag:"🇫🇷", clSpots:2, elSpots:2, ueclSpots:1, teams:[
+    ["Paris Saint-Germain",90],["Olympique de Marseille",81],["AS Monaco FC",82],["RC Lens",78],
+    ["Olympique Lyonnais",79],["Stade Rennais F.C.",76],["LOSC Lille",80],["OGC Nice",77],
+    ["Stade de Reims",73],["RC Strasbourg Alsace",72],["Stade Brestois 29",71],["FC Nantes",70],
+    ["Toulouse FC",69],["Montpellier HSC",68],["Le Havre AC",67],["FC Metz",65],["Clermont Foot 63",64],["FC Lorient",66]
+  ]},
+  "Eredivisie":   { country:"Netherlands",flag:"🇳🇱", clSpots:1, elSpots:2, ueclSpots:1, teams:[
+    ["PSV Eindhoven",83],["Feyenoord",81],["AFC Ajax",80],["AZ Alkmaar",78],["FC Twente",76],
+    ["FC Utrecht",74],["Sparta Rotterdam",71],["FC Groningen",70],["SC Heerenveen",70],["NEC Nijmegen",69],
+    ["Heracles Almelo",68],["Go Ahead Eagles",68],["RKC Waalwijk",66],["FC Volendam",64],["PEC Zwolle",65],
+    ["Excelsior",63],["Almere City FC",62],["FC Emmen",61]
+  ]},
+  "Liga Portugal":{ country:"Portugal",   flag:"🇵🇹", clSpots:2, elSpots:1, ueclSpots:1, teams:[
+    ["Sporting CP",83],["SL Benfica",84],["FC Porto",82],["SC Braga",77],["Vitória SC",74],
+    ["Casa Pia AC",70],["Moreirense FC",68],["GD Estoril Praia",68],["CD Arouca",69],["GD Chaves",66],
+    ["FC Vizela",65],["Rio Ave FC",67],["Gil Vicente FC",70],["FC Famalicão",66],
+    ["CF Estrela da Amadora",64],["Portimonense SC",65],["SC Farense",67],["Boavista FC",68]
+  ]}
+};
+
+// English PL qualification thresholds (0-indexed finish position)
+const PL_CL_POS   = [0,1,2,3];
+const PL_EL_POS   = [4,5];
+const PL_UECL_POS = [6];
+
+// ============================================================
+// INITIAL EUROPEAN COMPETITION PARTICIPANTS
+// ============================================================
+const INITIAL_CL_TEAMS = [
+  {name:"Liverpool F.C.",league:"Premier League",rating:88},
+  {name:"Manchester City F.C.",league:"Premier League",rating:89},
+  {name:"Arsenal F.C.",league:"Premier League",rating:86},
+  {name:"Manchester United F.C.",league:"Premier League",rating:82},
+  {name:"Chelsea F.C.",league:"Premier League",rating:83},
+  {name:"Tottenham Hotspur F.C.",league:"Premier League",rating:81},
+  {name:"FC Barcelona",league:"LaLiga",rating:89},
+  {name:"Real Madrid CF",league:"LaLiga",rating:91},
+  {name:"Atlético Madrid",league:"LaLiga",rating:86},
+  {name:"Athletic Club",league:"LaLiga",rating:78},
+  {name:"Villarreal CF",league:"LaLiga",rating:79},
+  {name:"FC Bayern Munich",league:"Bundesliga",rating:89},
+  {name:"Borussia Dortmund",league:"Bundesliga",rating:85},
+  {name:"Bayer 04 Leverkusen",league:"Bundesliga",rating:86},
+  {name:"RB Leipzig",league:"Bundesliga",rating:84},
+  {name:"Eintracht Frankfurt",league:"Bundesliga",rating:80},
+  {name:"Inter Milan",league:"Serie A",rating:87},
+  {name:"SSC Napoli",league:"Serie A",rating:84},
+  {name:"Juventus FC",league:"Serie A",rating:83},
+  {name:"AC Milan",league:"Serie A",rating:82},
+  {name:"Paris Saint-Germain",league:"Ligue 1",rating:90},
+  {name:"Olympique de Marseille",league:"Ligue 1",rating:81},
+  {name:"AS Monaco FC",league:"Ligue 1",rating:82},
+  {name:"RC Lens",league:"Ligue 1",rating:78},
+  {name:"PSV Eindhoven",league:"Eredivisie",rating:83},
+  {name:"Feyenoord",league:"Eredivisie",rating:81},
+  {name:"AFC Ajax",league:"Eredivisie",rating:80},
+  {name:"FC Porto",league:"Liga Portugal",rating:82},
+  {name:"Sporting CP",league:"Liga Portugal",rating:83},
+  {name:"SL Benfica",league:"Liga Portugal",rating:84},
+  {name:"Club Brugge KV",league:"Belgian Pro League",rating:78},
+  {name:"Royale Union Saint-Gilloise",league:"Belgian Pro League",rating:74},
+  {name:"Galatasaray S.K.",league:"Süper Lig",rating:79},
+  {name:"Olympiacos F.C.",league:"Super League Greece",rating:74},
+  {name:"Red Star Belgrade",league:"SuperLiga Serbia",rating:76},
+  {name:"Bodø/Glimt",league:"Eliteserien",rating:72}
+];
+const INITIAL_EL_TEAMS = [
+  {name:"Aston Villa F.C.",league:"Premier League",rating:81},
+  {name:"Newcastle United F.C.",league:"Premier League",rating:80},
+  {name:"Brighton & Hove Albion F.C.",league:"Premier League",rating:78},
+  {name:"Real Betis Balompié",league:"LaLiga",rating:77},
+  {name:"Real Sociedad",league:"LaLiga",rating:76},
+  {name:"Sevilla FC",league:"LaLiga",rating:75},
+  {name:"SC Freiburg",league:"Bundesliga",rating:77},
+  {name:"VfB Stuttgart",league:"Bundesliga",rating:79},
+  {name:"FSV Mainz 05",league:"Bundesliga",rating:75},
+  {name:"AS Roma",league:"Serie A",rating:80},
+  {name:"SS Lazio",league:"Serie A",rating:78},
+  {name:"ACF Fiorentina",league:"Serie A",rating:76},
+  {name:"Olympique Lyonnais",league:"Ligue 1",rating:79},
+  {name:"Stade Rennais F.C.",league:"Ligue 1",rating:76},
+  {name:"AZ Alkmaar",league:"Eredivisie",rating:78},
+  {name:"FC Utrecht",league:"Eredivisie",rating:74},
+  {name:"SL Benfica",league:"Liga Portugal",rating:84},
+  {name:"SC Braga",league:"Liga Portugal",rating:77},
+  {name:"R.S.C. Anderlecht",league:"Belgian Pro League",rating:75},
+  {name:"Sint-Truiden V.V.",league:"Belgian Pro League",rating:68},
+  {name:"Beşiktaş J.K.",league:"Süper Lig",rating:74},
+  {name:"Trabzonspor",league:"Süper Lig",rating:73},
+  {name:"RB Salzburg",league:"Austrian Bundesliga",rating:79},
+  {name:"Celtic F.C.",league:"Scottish Premiership",rating:80},
+  {name:"Viktoria Plzeň",league:"Czech First League",rating:72},
+  {name:"PAOK FC",league:"Super League Greece",rating:74},
+  {name:"FC Midtjylland",league:"Danish Superliga",rating:72},
+  {name:"Malmö FF",league:"Allsvenskan",rating:71},
+  {name:"Sheriff Tiraspol",league:"Moldovan National Division",rating:70},
+  {name:"HJK Helsinki",league:"Veikkausliiga",rating:68},
+  {name:"Qarabağ FK",league:"Azerbaijan Premier League",rating:69},
+  {name:"Ludogorets Razgrad",league:"Bulgarian First League",rating:70},
+  {name:"Ferencváros TC",league:"OTP Bank Liga",rating:74},
+  {name:"Sparta Praha",league:"Czech First League",rating:75},
+  {name:"Slavia Praha",league:"Czech First League",rating:74},
+  {name:"FK Bodø/Glimt B",league:"Eliteserien",rating:70}
+];
+const INITIAL_UECL_TEAMS = [
+  {name:"Crystal Palace F.C.",league:"Premier League",rating:74},
+  {name:"AFC Bournemouth",league:"Premier League",rating:73},
+  {name:"Brentford F.C.",league:"Premier League",rating:75},
+  {name:"Rayo Vallecano",league:"LaLiga",rating:70},
+  {name:"CA Osasuna",league:"LaLiga",rating:71},
+  {name:"Girona FC",league:"LaLiga",rating:74},
+  {name:"Werder Bremen",league:"Bundesliga",rating:73},
+  {name:"VfL Wolfsburg",league:"Bundesliga",rating:74},
+  {name:"Bologna FC 1909",league:"Serie A",rating:74},
+  {name:"Torino FC",league:"Serie A",rating:73},
+  {name:"RC Strasbourg Alsace",league:"Ligue 1",rating:72},
+  {name:"Stade Rennais B",league:"Ligue 1",rating:70},
+  {name:"FC Twente",league:"Eredivisie",rating:76},
+  {name:"Go Ahead Eagles",league:"Eredivisie",rating:68},
+  {name:"Vitória SC",league:"Liga Portugal",rating:74},
+  {name:"Moreirense FC",league:"Liga Portugal",rating:68},
+  {name:"KAA Gent",league:"Belgian Pro League",rating:72},
+  {name:"Cercle Brugge K.S.V.",league:"Belgian Pro League",rating:69},
+  {name:"Hibernian F.C.",league:"Scottish Premiership",rating:70},
+  {name:"Aberdeen F.C.",league:"Scottish Premiership",rating:69},
+  {name:"İstanbul Başakşehir F.K.",league:"Süper Lig",rating:72},
+  {name:"Molde FK",league:"Eliteserien",rating:71},
+  {name:"AIK Fotboll",league:"Allsvenskan",rating:69},
+  {name:"Shamrock Rovers F.C.",league:"League of Ireland",rating:67},
+  {name:"FC Lausanne-Sport",league:"Swiss Super League",rating:70},
+  {name:"Hajduk Split",league:"HNL Croatia",rating:71},
+  {name:"Austria Wien",league:"Austrian Bundesliga",rating:70},
+  {name:"Legia Warsaw",league:"Ekstraklasa",rating:72},
+  {name:"FC København",league:"Danish Superliga",rating:73},
+  {name:"Shakhtar Donetsk",league:"Ukrainian Premier League",rating:78},
+  {name:"Rapid Wien",league:"Austrian Bundesliga",rating:71},
+  {name:"Maccabi Haifa F.C.",league:"Israeli Premier League",rating:70},
+  {name:"Partizan Belgrade",league:"SuperLiga Serbia",rating:73},
+  {name:"Rosenborg BK",league:"Eliteserien",rating:69},
+  {name:"FC Basel",league:"Swiss Super League",rating:72},
+  {name:"Rakow Czestochowa",league:"Ekstraklasa",rating:71}
 ];
 
 const NATIONALITIES = [
@@ -969,8 +1136,13 @@ function defaultState() {
     playerStats: {},
     careerStats: {},
     userFormation: null,
+    manualSlots: {},
     cupMatches: [],      // [{ week, cup, round, opponentId, isHome, played, result }]
     cupResults: {},      // { 'fa': {status: 'in'|'out', round: 'R5'}, ... }
+    europeanQualification: null, // 'cl'|'el'|'uecl'|null — set at end of PL season
+    currentEuroComp: null,       // which comp user is currently in this season
+    euroLeagues: null,           // European domestic league state (standings + fixtures)
+    euroComp: null,              // CL/EL/UECL competition state
     nextId: 1
   };
 }
@@ -1054,20 +1226,145 @@ function coachWage(rating) {
 
 // --- AVATAR ---
 function makeAvatar(id, name, nationality) {
-  const skinTones = ['#FDBCB4','#F1C27D','#E0AC69','#C68642','#8D5524','#4A2912'];
-  const hairColors = ['#1a1a1a','#4a3728','#8B4513','#DAA520','#FF6B35','#C0C0C0'];
-  const jerseyColors = ['#e74c3c','#3498db','#2ecc71','#f39c12','#9b59b6','#1abc9c','#e67e22','#e91e63','#00bcd4','#ff5722'];
-  let skinIdx;
+  let s = (id * 2654435761) >>> 0;
+  const rng = () => { s = (s ^ (s << 13)) >>> 0; s = (s ^ (s >> 17)) >>> 0; s = (s ^ (s << 5)) >>> 0; return s / 4294967296; };
+
+  const skinPalette = [
+    { skin:'#FDBCB4', shadow:'#D48070', nose:'#C07060' },
+    { skin:'#F5CBA7', shadow:'#D4975E', nose:'#B87848' },
+    { skin:'#E0AC69', shadow:'#B87842', nose:'#A0682E' },
+    { skin:'#C68642', shadow:'#9A6028', nose:'#885018' },
+    { skin:'#8D5524', shadow:'#6A3A10', nose:'#5A2C08' },
+    { skin:'#4A2912', shadow:'#321808', nose:'#2A1206' },
+  ];
   const fair = ['English','Spanish','German','French','Dutch','Belgian','Italian','Portuguese','Scottish','Welsh','Irish'];
-  const mid = ['Brazilian','Colombian','Argentinian','Uruguayan','Moroccan'];
-  if (fair.includes(nationality)) skinIdx = Math.floor(Math.random()*3);
-  else if (mid.includes(nationality)) skinIdx = 2 + Math.floor(Math.random()*2);
-  else skinIdx = 3 + Math.floor(Math.random()*3);
-  const skin = skinTones[skinIdx];
-  const hair = hairColors[(id * 3) % hairColors.length];
-  const jersey = jerseyColors[(id * 7) % jerseyColors.length];
-  const initials = (name.split(' ').map(n=>n[0]).join('').substring(0,2)).toUpperCase();
-  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="60" height="60" viewBox="0 0 60 60"><circle cx="30" cy="30" r="30" fill="${jersey}"/><circle cx="30" cy="22" r="10" fill="${skin}"/><ellipse cx="30" cy="50" rx="14" ry="12" fill="${skin}"/><rect x="22" y="14" width="16" height="6" rx="3" fill="${hair}"/><text x="30" y="56" text-anchor="middle" fill="rgba(255,255,255,0.9)" font-size="9" font-family="sans-serif" font-weight="bold">${initials}</text></svg>`;
+  const mid  = ['Brazilian','Colombian','Argentinian','Uruguayan','Moroccan'];
+  let si;
+  if (fair.includes(nationality)) si = Math.floor(rng() * 3);
+  else if (mid.includes(nationality)) si = 2 + Math.floor(rng() * 2);
+  else si = 3 + Math.floor(rng() * 3);
+  si = Math.min(si, 5);
+  const { skin, shadow, nose: noseClr } = skinPalette[si];
+
+  const hairPalette = ['#111','#1C1008','#2C1810','#4A2E18','#6B3A20','#8B5E2A','#A07830','#C4A050','#E0B060','#C0C0C0','#808080'];
+  const hair = hairPalette[Math.floor(rng() * hairPalette.length)];
+  const browColor = (hair === '#C0C0C0' || hair === '#808080') ? '#888' : hair;
+
+  const eyePalette = ['#3B5A3C','#4A6E8A','#7B5A38','#2A3C52','#6B4226','#3D5A3D'];
+  const eyeColor = eyePalette[Math.floor(rng() * eyePalette.length)];
+
+  const jerseyPalette = ['#c0392b','#2980b9','#27ae60','#d35400','#8e44ad','#16a085','#e67e22','#e91e63','#00bcd4','#ff5722','#1565c0','#558b2f'];
+  const jersey = jerseyPalette[(id * 7) % jerseyPalette.length];
+
+  const styles = ['short','fade','wavy','curly','bald','mohawk','long','buzz'];
+  const hairStyle = styles[Math.floor(rng() * styles.length)];
+
+  const hasBeard = rng() < 0.35;
+  const hasMustache = !hasBeard && rng() < 0.25;
+  const hasTattoo = rng() < 0.15;
+  const beardStyle = Math.floor(rng() * 3);
+  const mouthStyle = Math.floor(rng() * 3);
+
+  let hairSVG = '';
+  switch(hairStyle) {
+    case 'short':
+      hairSVG = `<path d="M16,30 Q16,12 30,11 Q44,12 44,30 Q42,16 30,15 Q18,16 16,30Z" fill="${hair}"/>`;
+      break;
+    case 'fade':
+      hairSVG = `<path d="M17,29 Q17,12 30,11 Q43,12 43,29 Q41,17 30,15 Q19,17 17,29Z" fill="${hair}"/>`;
+      break;
+    case 'wavy':
+      hairSVG = `<path d="M16,28 Q17,10 30,10 Q43,10 44,28 Q42,14 30,13 Q18,14 16,28Z" fill="${hair}"/>
+<path d="M16,28 Q18,22 20,26 Q22,20 24,24 Q26,18 28,22 Q30,16 32,20 Q34,16 36,20 Q38,18 40,24 Q42,22 44,28Z" fill="${hair}" opacity="0.7"/>`;
+      break;
+    case 'curly':
+      hairSVG = `<path d="M16,28 Q16,8 30,8 Q44,8 44,28 Q42,12 30,11 Q18,12 16,28Z" fill="${hair}"/>
+<circle cx="21" cy="15" r="3.5" fill="${hair}"/>
+<circle cx="27" cy="10" r="4" fill="${hair}"/>
+<circle cx="33" cy="10" r="4" fill="${hair}"/>
+<circle cx="39" cy="15" r="3.5" fill="${hair}"/>
+<circle cx="24" cy="13" r="3" fill="${hair}"/>
+<circle cx="36" cy="13" r="3" fill="${hair}"/>`;
+      break;
+    case 'bald':
+      hairSVG = `<path d="M18,27 Q18,17 30,16 Q42,17 42,27 Q40,20 30,19 Q20,20 18,27Z" fill="${hair}" opacity="0.12"/>`;
+      break;
+    case 'mohawk':
+      hairSVG = `<path d="M27,22 L27.5,10 Q30,7 32.5,10 L33,22 Q30,19 27,22Z" fill="${hair}"/>`;
+      break;
+    case 'long':
+      hairSVG = `<path d="M16,28 Q16,12 30,11 Q44,12 44,28 Q42,14 30,13 Q18,14 16,28Z" fill="${hair}"/>
+<rect x="14" y="27" width="5" height="24" rx="2.5" fill="${hair}"/>
+<rect x="41" y="27" width="5" height="24" rx="2.5" fill="${hair}"/>`;
+      break;
+    case 'buzz':
+    default:
+      hairSVG = `<path d="M17,28 Q17,14 30,13 Q43,14 43,28 Q41,17 30,16 Q19,17 17,28Z" fill="${hair}" opacity="0.85"/>`;
+      break;
+  }
+
+  let beardSVG = '';
+  if (hasBeard) {
+    if (beardStyle === 0)
+      beardSVG = `<ellipse cx="30" cy="44" rx="11" ry="7" fill="${hair}" opacity="0.9"/>
+<path d="M19,40 Q30,48 41,40 Q41,47 30,50 Q19,47 19,40Z" fill="${hair}" opacity="0.85"/>`;
+    else if (beardStyle === 1)
+      beardSVG = `<ellipse cx="30" cy="43" rx="11" ry="6" fill="${hair}" opacity="0.28"/>`;
+    else
+      beardSVG = `<ellipse cx="30" cy="46" rx="5.5" ry="5" fill="${hair}" opacity="0.9"/>`;
+  }
+
+  let mustacheSVG = hasMustache
+    ? `<path d="M24.5,39.5 Q27,37.5 30,38.5 Q33,37.5 35.5,39.5 Q33,40.5 30,39.5 Q27,40.5 24.5,39.5Z" fill="${hair}"/>`
+    : '';
+
+  let tattooSVG = '';
+  if (hasTattoo) {
+    const tStyle = Math.floor(rng() * 3);
+    if (tStyle === 0)
+      tattooSVG = `<text x="14" y="30" font-size="5" fill="${shadow}" opacity="0.55" font-family="serif">★</text>`;
+    else if (tStyle === 1)
+      tattooSVG = `<path d="M15,27 L16,30 M14,29 L17,29" stroke="${shadow}" stroke-width="0.9" opacity="0.45" stroke-linecap="round"/>`;
+    else
+      tattooSVG = `<path d="M14,26 L15.5,29 L14,32 L16.5,30 L19,31.5 L17.5,29 L19,26.5 L16.5,28Z" fill="${shadow}" opacity="0.38"/>`;
+  }
+
+  let mouthSVG;
+  if (mouthStyle === 0)
+    mouthSVG = `<path d="M25,40 Q30,43 35,40" stroke="#b06070" stroke-width="1.8" fill="none" stroke-linecap="round"/>
+<path d="M25,40 Q30,39 35,40" stroke="#c07880" stroke-width="0.8" fill="none"/>`;
+  else if (mouthStyle === 1)
+    mouthSVG = `<path d="M25.5,40.5 Q30,41.5 34.5,40.5" stroke="#b06070" stroke-width="1.8" fill="none" stroke-linecap="round"/>`;
+  else
+    mouthSVG = `<path d="M25,41 Q30,39.5 35,41" stroke="#b06070" stroke-width="1.8" fill="none" stroke-linecap="round"/>`;
+
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="60" height="60" viewBox="0 0 60 60">
+<circle cx="30" cy="30" r="30" fill="#0d1117"/>
+<ellipse cx="30" cy="66" rx="28" ry="22" fill="${jersey}"/>
+<rect x="26" y="46" width="8" height="14" rx="3" fill="${skin}"/>
+<ellipse cx="30" cy="30" rx="14" ry="16" fill="${skin}"/>
+${hairSVG}
+<ellipse cx="16" cy="30" rx="3" ry="4" fill="${skin}"/>
+<ellipse cx="44" cy="30" rx="3" ry="4" fill="${skin}"/>
+<path d="M21,23.5 Q24.5,21 28,23" stroke="${browColor}" stroke-width="1.8" fill="none" stroke-linecap="round"/>
+<path d="M32,23 Q35.5,21 39,23.5" stroke="${browColor}" stroke-width="1.8" fill="none" stroke-linecap="round"/>
+<ellipse cx="24.5" cy="27" rx="3.8" ry="3" fill="white"/>
+<circle cx="24.5" cy="27" r="2.2" fill="${eyeColor}"/>
+<circle cx="24.5" cy="27" r="1.3" fill="#111"/>
+<circle cx="25.3" cy="26.2" r="0.55" fill="white"/>
+<ellipse cx="35.5" cy="27" rx="3.8" ry="3" fill="white"/>
+<circle cx="35.5" cy="27" r="2.2" fill="${eyeColor}"/>
+<circle cx="35.5" cy="27" r="1.3" fill="#111"/>
+<circle cx="36.3" cy="26.2" r="0.55" fill="white"/>
+<path d="M29,30 L27.8,35" stroke="${noseClr}" stroke-width="0.9" fill="none" stroke-linecap="round"/>
+<path d="M31,30 L32.2,35" stroke="${noseClr}" stroke-width="0.9" fill="none" stroke-linecap="round"/>
+<path d="M26.8,35.5 Q28.2,37 30,36.5 Q31.8,37 33.2,35.5" stroke="${noseClr}" stroke-width="0.9" fill="none" stroke-linecap="round"/>
+${mouthSVG}
+${beardSVG}
+${mustacheSVG}
+${tattooSVG}
+</svg>`;
+
   return 'data:image/svg+xml,' + encodeURIComponent(svg);
 }
 
@@ -1104,7 +1401,8 @@ function generatePlayer(position, ageRange = [17, 35], maxRating = 99) {
     morale: 70,
     moraleBoostWeeks: 0,
     avatar: makeAvatar(id, fullName, nat),
-    awards: []
+    awards: [],
+    stamina: 100,
   };
   G.players[id] = p;
   G.playerStats[id] = { apps: 0, goals: 0, assists: 0, cleanSheets: 0, rating: 6.5 };
@@ -1270,6 +1568,260 @@ function setupAllFixtures() {
   });
 }
 
+// ============================================================
+// EUROPEAN LEAGUES SETUP & SIMULATION
+// ============================================================
+
+function setupEuropeanLeagues() {
+  G.euroLeagues = {};
+  Object.entries(EURO_LEAGUE_DATA).forEach(([leagueName, data]) => {
+    const leagueKey = leagueName.replace(/\s+/g,'_');
+    const teamObjs = data.teams.map(([name, rating], i) => ({ id: `el_${leagueKey}_${i}`, name, rating }));
+    const standings = {};
+    teamObjs.forEach(t => { standings[t.id] = { teamId: t.id, name: t.name, rating: t.rating, p:0,w:0,d:0,l:0,gf:0,ga:0,pts:0 }; });
+    const teamIds = teamObjs.map(t => t.id);
+    G.euroLeagues[leagueName] = {
+      data,
+      teams: teamObjs,
+      standings,
+      fixtures: generateEuroLgFixtures(teamIds)
+    };
+  });
+}
+
+function generateEuroLgFixtures(teamIds) {
+  const n = teamIds.length;
+  let arr = [...teamIds];
+  if (n % 2 !== 0) arr.push(null);
+  const total = arr.length;
+  const half = total / 2;
+  const rounds = [];
+  for (let r = 0; r < total - 1; r++) {
+    const matches = [];
+    for (let i = 0; i < half; i++) {
+      const home = arr[i], away = arr[total - 1 - i];
+      if (home && away) matches.push([home, away]);
+    }
+    rounds.push(matches);
+    const last = arr.pop(); arr.splice(1, 0, last);
+  }
+  // Double round-robin
+  const reverse = rounds.map((rd, ri) => ({
+    matches: rd.map(m => [m[1], m[0]])
+  }));
+  return rounds.concat(reverse).map((rd, i) => ({ round: i + 1, matches: rd.matches || rd }));
+}
+
+function simulateEuroLeagueRound(weekIdx) {
+  if (!G.euroLeagues) return;
+  Object.entries(G.euroLeagues).forEach(([ln, lg]) => {
+    const round = lg.fixtures[weekIdx];
+    if (!round) return;
+    const ms = round.matches || round;
+    ms.forEach(([hId, aId]) => {
+      const h = lg.standings[hId], a = lg.standings[aId];
+      if (!h || !a) return;
+      const hTeam = lg.teams.find(t => t.id === hId);
+      const aTeam = lg.teams.find(t => t.id === aId);
+      if (!hTeam || !aTeam) return;
+      const { gh, ga } = simEuroAI(hTeam.rating + 5, aTeam.rating);
+      h.p++; a.p++; h.gf += gh; h.ga += ga; a.gf += ga; a.ga += gh;
+      if (gh > ga) { h.w++; h.pts += 3; a.l++; }
+      else if (ga > gh) { a.w++; a.pts += 3; h.l++; }
+      else { h.d++; a.d++; h.pts++; a.pts++; }
+    });
+  });
+}
+
+function simEuroAI(hRating, aRating) {
+  let xgH = (hRating - aRating) / 12 + 1.2 + rand(-0.4, 0.4);
+  let xgA = (aRating - hRating) / 12 + 0.8 + rand(-0.4, 0.4);
+  return {
+    gh: Math.max(0, Math.round(xgH + normalRandom())),
+    ga: Math.max(0, Math.round(xgA + normalRandom()))
+  };
+}
+
+// ============================================================
+// EUROPEAN COMPETITIONS SETUP
+// ============================================================
+
+function setupEuroCompetitions() {
+  const comps = {
+    cl:   { teams: [...INITIAL_CL_TEAMS],   mdWeeks: [6,9,11,13,16,18,21,23], mdCount:8, playoffWeek:26, r16Week:29, qfWeek:33, sfWeek:37, finalWeek:43 },
+    el:   { teams: [...INITIAL_EL_TEAMS],   mdWeeks: [6,9,11,13,16,18,21,23], mdCount:8, playoffWeek:26, r16Week:29, qfWeek:33, sfWeek:37, finalWeek:43 },
+    uecl: { teams: [...INITIAL_UECL_TEAMS], mdWeeks: [6,9,11,15,18,21],       mdCount:6, playoffWeek:24, r16Week:27, qfWeek:31, sfWeek:35, finalWeek:41 }
+  };
+  G.euroComp = {};
+  Object.entries(comps).forEach(([key, cfg]) => {
+    const participants = cfg.teams.map((t, i) => ({ ...t, euroId: i + 1, isUserTeam: false }));
+    // Check if user's team should be in this competition
+    let userIdx = -1;
+    if (G.currentEuroComp === key) {
+      // Add user's team as last participant
+      const userTeam = G.teams[G.userTeamId];
+      participants.push({ name: userTeam.name, league: G.division, rating: 75, euroId: participants.length + 1, isUserTeam: true });
+      userIdx = participants.length - 1;
+    }
+    const standings = {};
+    participants.forEach(p => { standings[p.euroId] = { p:0,w:0,d:0,l:0,gf:0,ga:0,pts:0, name: p.name, league: p.league, euroId: p.euroId }; });
+    // Generate partial round-robin schedule (mdCount rounds)
+    const mdSchedule = generateEuroCompSchedule(participants, cfg.mdCount);
+    G.euroComp[key] = {
+      participants,
+      standings,
+      mdSchedule, // array of mdCount rounds, each = array of [euroIdHome, euroIdAway]
+      mdWeeks: cfg.mdWeeks,
+      mdCount: cfg.mdCount,
+      mdPlayed: 0,
+      playoffWeek: cfg.playoffWeek,
+      r16Week: cfg.r16Week,
+      qfWeek: cfg.qfWeek,
+      sfWeek: cfg.sfWeek,
+      finalWeek: cfg.finalWeek,
+      userIn: G.currentEuroComp === key,
+      userEuroId: G.currentEuroComp === key ? participants[participants.length - 1].euroId : null,
+      userStatus: G.currentEuroComp === key ? 'league' : 'n/a'
+    };
+  });
+}
+
+function generateEuroCompSchedule(participants, numRounds) {
+  let arr = participants.map(p => p.euroId);
+  if (arr.length % 2 !== 0) arr.push(null);
+  const total = arr.length, half = total / 2;
+  const rounds = [];
+  for (let r = 0; r < numRounds; r++) {
+    const matches = [];
+    for (let i = 0; i < half; i++) {
+      const h = arr[i], a = arr[total - 1 - i];
+      if (h !== null && a !== null) matches.push([h, a]);
+    }
+    rounds.push(matches);
+    const last = arr.pop(); arr.splice(1, 0, last);
+  }
+  return rounds;
+}
+
+function simulateEuroCompMatchday(week) {
+  if (!G.euroComp) return;
+  ['cl','el','uecl'].forEach(key => {
+    const comp = G.euroComp[key];
+    if (!comp) return;
+    const mdIdx = comp.mdWeeks.indexOf(week);
+    if (mdIdx === -1 || mdIdx >= comp.mdSchedule.length) return;
+    const round = comp.mdSchedule[mdIdx];
+    round.forEach(([hId, aId]) => {
+      // Skip the user's match (handled by cup system)
+      if (comp.userIn && (hId === comp.userEuroId || aId === comp.userEuroId)) return;
+      const hP = comp.participants.find(p => p.euroId === hId);
+      const aP = comp.participants.find(p => p.euroId === aId);
+      if (!hP || !aP) return;
+      const { gh, ga } = simEuroAI(hP.rating + 5, aP.rating);
+      updateEuroCompStandings(comp, hId, aId, gh, ga);
+    });
+    comp.mdPlayed = Math.max(comp.mdPlayed, mdIdx + 1);
+  });
+}
+
+function updateEuroCompStandings(comp, hId, aId, gh, ga) {
+  const h = comp.standings[hId], a = comp.standings[aId];
+  if (!h || !a) return;
+  h.p++; a.p++; h.gf += gh; h.ga += ga; a.gf += ga; a.ga += gh;
+  if (gh > ga) { h.w++; h.pts += 3; a.l++; }
+  else if (ga > gh) { a.w++; a.pts += 3; h.l++; }
+  else { h.d++; a.d++; h.pts++; a.pts++; }
+}
+
+function updateUserEuroCompStandings(cup, goalsFor, goalsAgainst) {
+  if (!G.euroComp || !G.euroComp[cup]) return;
+  const comp = G.euroComp[cup];
+  if (!comp.userIn || !comp.userEuroId) return;
+  // User's result: we always treat user as "home" in terms of GF/GA
+  const s = comp.standings[comp.userEuroId];
+  if (!s) return;
+  s.p++;
+  s.gf += goalsFor; s.ga += goalsAgainst;
+  if (goalsFor > goalsAgainst) { s.w++; s.pts += 3; }
+  else if (goalsAgainst > goalsFor) { s.l++; }
+  else { s.d++; s.pts++; }
+}
+
+function evaluateEuroLeaguePhase(cup) {
+  if (!G.euroComp || !G.euroComp[cup]) return;
+  const comp = G.euroComp[cup];
+  if (!comp.userIn) return;
+  const list = Object.values(comp.standings).sort((a,b) => b.pts - a.pts || (b.gf-b.ga) - (a.gf-a.ga) || b.gf - a.gf);
+  const rank = list.findIndex(s => s.euroId === comp.userEuroId) + 1;
+  if (rank <= 8) {
+    comp.userStatus = 'r16';
+    addMessage("European", `Top 8 in the ${CUP_INFO[cup].name} league phase! Straight to Round of 16.`);
+    toast(`CL League Phase: R16 spot secured! (Pos. ${rank})`, "gold");
+    // Eliminate playoff cup match
+    (G.cupMatches || []).forEach(m => { if (m.cup === cup && m.round === 'PLAYOFF') m.eliminated = true; });
+  } else if (rank <= 24) {
+    comp.userStatus = 'playoff';
+    addMessage("European", `Finished ${rank}th — Knockout Playoff Round in ${CUP_INFO[cup].name}.`);
+    toast(`League Phase: Playoff Round (Pos. ${rank})`, "ok");
+  } else {
+    comp.userStatus = 'out';
+    addMessage("European", `Eliminated from ${CUP_INFO[cup].name} league phase (Pos. ${rank}).`);
+    toast(`Eliminated from league phase (Pos. ${rank})`, "error");
+    // Eliminate all remaining euro cup matches
+    (G.cupMatches || []).forEach(m => { if (m.cup === cup) m.eliminated = true; });
+    G.cupResults[cup] = { status: 'out', round: 'League Phase' };
+  }
+}
+
+function determineEuropeanQualification() {
+  if (G.division !== 'Premier League') { G.europeanQualification = null; return; }
+  const standings = G.standings['Premier League'];
+  if (!standings) return;
+  const list = Object.values(standings).sort((a,b) => b.pts - a.pts || (b.gf-b.ga) - (a.gf-a.ga));
+  const myRank = list.findIndex(s => s.teamId === G.userTeamId);
+  if (PL_CL_POS.includes(myRank)) {
+    G.europeanQualification = 'cl';
+    addMessage("Board", `Top ${myRank + 1} finish! We've qualified for the UEFA Champions League!`);
+    toast("UEFA Champions League qualified!", "gold");
+  } else if (PL_EL_POS.includes(myRank)) {
+    G.europeanQualification = 'el';
+    addMessage("Board", `${myRank + 1}th place earns UEFA Europa League qualification!`);
+    toast("UEFA Europa League qualified!", "gold");
+  } else if (PL_UECL_POS.includes(myRank)) {
+    G.europeanQualification = 'uecl';
+    addMessage("Board", `${myRank + 1}th place secures UEFA Conference League football!`);
+    toast("UEFA Conference League qualified!", "ok");
+  } else {
+    G.europeanQualification = null;
+  }
+}
+
+function rebuildEuroCompParticipants() {
+  if (!G.euroLeagues) { setupEuropeanLeagues(); return; }
+  const newCL = [], newEL = [], newUECL = [];
+  Object.entries(EURO_LEAGUE_DATA).forEach(([ln, data]) => {
+    const lg = G.euroLeagues[ln];
+    if (!lg) return;
+    const sorted = Object.values(lg.standings).sort((a,b)=>b.pts-a.pts||(b.gf-b.ga)-(a.gf-a.ga));
+    sorted.forEach((s, i) => {
+      const teamObj = lg.teams.find(t => t.id === s.teamId);
+      const t = { name: s.name, league: ln, rating: teamObj ? teamObj.rating : 70 };
+      if (i < data.clSpots) newCL.push(t);
+      else if (i < data.clSpots + data.elSpots) newEL.push(t);
+      else if (i < data.clSpots + data.elSpots + data.ueclSpots) newUECL.push(t);
+    });
+  });
+  // Pad each to 36 with original defaults if needed
+  function padTo36(arr, defaults) {
+    const used = new Set(arr.map(t=>t.name));
+    for (const d of defaults) { if (arr.length >= 36) break; if (!used.has(d.name)) { arr.push(d); used.add(d.name); } }
+    return arr.slice(0, 36);
+  }
+  INITIAL_CL_TEAMS.splice(0, INITIAL_CL_TEAMS.length, ...padTo36(newCL, INITIAL_CL_TEAMS));
+  INITIAL_EL_TEAMS.splice(0, INITIAL_EL_TEAMS.length, ...padTo36(newEL, INITIAL_EL_TEAMS));
+  INITIAL_UECL_TEAMS.splice(0, INITIAL_UECL_TEAMS.length, ...padTo36(newUECL, INITIAL_UECL_TEAMS));
+}
+
 // Team rating used for displaying star strength on tables and team cards
 function teamRating(team) {
   if (!team) return 50;
@@ -1290,7 +1842,10 @@ function getTeamStrength(teamId) {
   if (!team) return { attack: 50, defense: 50, mid: 50, overall: 50, players: [] };
   const idList = teamId === G.userTeamId ? (G.myPlayers || []) : (team.players || []);
   const players = idList.map(id => G.players[id]).filter(p => p && p.position && POSITIONS[p.position]);
-  if (players.length === 0) return { attack: 50, defense: 50, mid: 50, overall: 50, players: [] };
+  if (players.length === 0) {
+    const base = team.coachHeadRating || 65;
+    return { attack: base, defense: base, mid: base, overall: base, players: [] };
+  }
   let attRatings = [], midRatings = [], defRatings = [];
   players.forEach(p => {
     const pos = POSITIONS[p.position];
@@ -1320,6 +1875,50 @@ function getTeamStrength(teamId) {
     defense: defense * 0.5 + mid * 0.3 + coachBonus * 2,
     mid, overall: (attack + mid + defense) / 3,
     players
+  };
+}
+
+// --- EURO AI USER MATCH SIMULATION ---
+function simulateEuroAIUserMatch(cupMatch) {
+  const aiRating = cupMatch.opponentRating || 75;
+  const myStr = getTeamStrength(G.userTeamId);
+  const myRating = myStr.overall || 65;
+  const homeAdv = 5;
+  const myIsHome = cupMatch.isHome;
+  const hRating = myIsHome ? myRating + homeAdv : aiRating + homeAdv;
+  const aRating = myIsHome ? aiRating : myRating;
+  let xgH = (hRating - aRating) / 12 + 1.2 + rand(-0.4, 0.4);
+  let xgA = (aRating - hRating) / 12 + 0.8 + rand(-0.4, 0.4);
+  const goalsHome = Math.max(0, Math.round(xgH + normalRandom()));
+  const goalsAway = Math.max(0, Math.round(xgA + normalRandom()));
+  const myGoals = myIsHome ? goalsHome : goalsAway;
+  const aiGoals = myIsHome ? goalsAway : goalsHome;
+  const won = myGoals > aiGoals, lost = myGoals < aiGoals;
+  const myScorers = pickScorers(myStr.players, myGoals);
+  const myRatings = computeMatchRatings(myStr.players, myScorers, aiGoals === 0, won, lost);
+  const myBest = findBestPlayer(myRatings);
+  // Update Euro comp standings
+  if (cupMatch.isEuroLP && G.currentEuroComp) {
+    updateUserEuroCompStandings(G.currentEuroComp, myGoals, aiGoals);
+    // If this was last LP matchday, evaluate phase
+    const comp = G.euroComp[G.currentEuroComp];
+    if (comp && cupMatch.mdIdx === comp.mdCount - 1) {
+      evaluateEuroLeaguePhase(G.currentEuroComp);
+    }
+  }
+  return {
+    homeId: myIsHome ? G.userTeamId : null,
+    awayId: myIsHome ? null : G.userTeamId,
+    goalsHome, goalsAway,
+    homeScorers: myIsHome ? myScorers : [],
+    awayScorers: myIsHome ? [] : myScorers,
+    homeBest: myIsHome ? myBest : null,
+    awayBest: myIsHome ? null : myBest,
+    homeMatchRatings: myIsHome ? myRatings : [],
+    awayMatchRatings: myIsHome ? [] : myRatings,
+    division: G.division, week: G.week,
+    isEuroMatch: true,
+    euroOpponentName: cupMatch.opponentName
   };
 }
 
@@ -1495,14 +2094,24 @@ function simulateWeek() {
       });
     }
   });
+  // Simulate European league rounds and comp matchdays for this week
+  simulateEuroLeagueRound(weekIdx);
+  simulateEuroCompMatchday(G.week);
+
   // Cup match for this week
   const cupMatch = getCupMatchForWeek(G.week);
   let cupResult = null;
   if (cupMatch) {
     try {
-      const homeId = cupMatch.isHome ? G.userTeamId : cupMatch.opponentId;
-      const awayId = cupMatch.isHome ? cupMatch.opponentId : G.userTeamId;
-      const r = simulateMatch(homeId, awayId);
+      let r;
+      if (!cupMatch.opponentId && cupMatch.opponentName) {
+        // Euro AI opponent — use rating-based simulation
+        r = simulateEuroAIUserMatch(cupMatch);
+      } else {
+        const homeId = cupMatch.isHome ? G.userTeamId : cupMatch.opponentId;
+        const awayId = cupMatch.isHome ? cupMatch.opponentId : G.userTeamId;
+        r = simulateMatch(homeId, awayId);
+      }
       if (r) {
         cupResult = { ...r, cup: cupMatch.cup, round: cupMatch.round };
         cupMatch.played = true;
@@ -1536,7 +2145,7 @@ function simulateWeek() {
           if (cupMatch.round === "FINAL") {
             G.cupResults[cupMatch.cup] = { status: "won" };
             addMessage("Cup", `🏆 WON THE ${CUP_INFO[cupMatch.cup].name}!`);
-            const prize = cupMatch.cup === "cl" ? 100e6 : cupMatch.cup === "fa" ? 2e6 : cupMatch.cup === "carabao" ? 200e3 : 5e6;
+            const prize = (cupMatch.cup === "cl") ? 120e6 : (cupMatch.cup === "el") ? 35e6 : (cupMatch.cup === "uecl") ? 20e6 : cupMatch.cup === "fa" ? 2e6 : cupMatch.cup === "carabao" ? 200e3 : 5e6;
             G.budget += prize;
           } else {
             addMessage("Cup", `Through to the next round of ${CUP_INFO[cupMatch.cup].name}!`);
@@ -1550,6 +2159,21 @@ function simulateWeek() {
       console.error("Cup match failed:", e);
     }
   }
+  // Stamina: recover weekly, deduct for players who played
+  const { lineup: weekLineup, subs: weekSubs } = pickStartingXI(G.userFormation || pickBestFormation());
+  const starterIds = new Set(weekLineup.map(l => l.player?.id).filter(Boolean));
+  const subIds = new Set(weekSubs.map(p => p.id));
+  const hadMatch = !!(userResult || cupResult);
+  G.myPlayers.forEach(id => {
+    const p = G.players[id];
+    if (!p) return;
+    if (p.stamina === undefined) p.stamina = 100;
+    p.stamina = Math.min(100, p.stamina + 8);
+    if (hadMatch) {
+      if (starterIds.has(id)) p.stamina = Math.max(0, p.stamina - 18);
+      else if (subIds.has(id)) p.stamina = Math.max(0, p.stamina - 7);
+    }
+  });
   // Decrement morale boosts & contracts
   G.myPlayers.forEach(id => {
     const p = G.players[id];
@@ -1820,10 +2444,14 @@ function endSeason() {
     G.teams[G.userTeamId].division = G.division;
     addMessage("Board",`Relegated to ${G.division}. We'll rebuild.`);
   }
+  // European qualification based on final standings
+  determineEuropeanQualification();
+
   // Save end-of-season state for screen
   G.endOfSeason = {
     division: div, finalRank: myRank, list, prize,
-    promoted, relegated, gameOver
+    promoted, relegated, gameOver,
+    euroQual: G.europeanQualification
   };
   renderTab(); // ensures something to show
   saveGame();
@@ -1882,6 +2510,8 @@ function beginNewSeason() {
   });
   // Reset standings & fixtures
   setupAllFixtures();
+  // Reset European leagues for new season simulation
+  setupEuropeanLeagues();
   G.season++;
   G.seasonYear++;
   G.week = 1;
@@ -1889,6 +2519,9 @@ function beginNewSeason() {
   G.endOfSeason = null;
   G.incomingBids = [];
   G.transferList = [];
+  G.currentEuroComp = G.europeanQualification || null;
+  // Rebuild European competitions (new participants based on Euro league standings)
+  rebuildEuroCompParticipants();
   saveGame();
 }
 
@@ -1967,13 +2600,13 @@ function renderTeamSelect() {
   const grid = document.getElementById("teamGrid");
   const champTeams = Object.values(G.teams).filter(t => t.division === "Championship");
   // Every team starts with £200M budget regardless of tier
-  champTeams.forEach(t => { t.startBudget = 50e6; });
+  champTeams.forEach(t => { t.startBudget = 150e6; });
   grid.innerHTML = champTeams.map(t => `
     <div class="team-card" onclick="selectTeam(${t.id})">
       <div class="name">${t.name}</div>
       <div class="city">${t.city}</div>
       <div class="fact">${t.fact}</div>
-      <div class="budget">Starting Budget: £50M</div>
+      <div class="budget">Starting Budget: £150M</div>
     </div>
   `).join("");
 }
@@ -1981,7 +2614,7 @@ function renderTeamSelect() {
 function selectTeam(teamId) {
   G.userTeamId = teamId;
   const team = G.teams[teamId];
-  G.budget = 50e6; // Starting budget: £50M
+  G.budget = 150e6; // Starting budget: £150M
   G.division = "Championship";
   // Build AI squads for ALL teams except user
   Object.values(G.teams).forEach(t => {
@@ -1990,6 +2623,7 @@ function selectTeam(teamId) {
   // Guarantee a healthy free-agent pool for the user
   ensureFreeAgentPool();
   setupAllFixtures();
+  setupEuropeanLeagues();
   generateCupSchedule();
   renderSetupPlayers();
   showScreen("playerSetup");
@@ -2017,43 +2651,90 @@ function generateCupSchedule() {
     { cup: "fa", round: "SF", week: 38 },
     { cup: "fa", round: "FINAL", week: 45 }
   ];
-  // European cups only for Premier League sides
-  let euroSchedule = [];
-  if (G.division === "Premier League") {
-    euroSchedule = [
-      { cup: "cl", round: "GS1", week: 5 },
-      { cup: "cl", round: "GS2", week: 7 },
-      { cup: "cl", round: "GS3", week: 10 },
-      { cup: "cl", round: "GS4", week: 15 },
-      { cup: "cl", round: "GS5", week: 18 },
-      { cup: "cl", round: "GS6", week: 21 },
-      { cup: "cl", round: "R16", week: 26 },
-      { cup: "cl", round: "QF", week: 32 },
-      { cup: "cl", round: "SF", week: 36 },
-      { cup: "cl", round: "FINAL", week: 42 }
-    ];
-  }
-  const all = [...carabaoSchedule, ...faSchedule, ...euroSchedule];
+  // Domestic cups
+  const all = [...carabaoSchedule, ...faSchedule];
   all.forEach(({ cup, round, week }) => {
     const opponent = pick(otherTeams);
-    G.cupMatches.push({
-      week, cup, round,
-      opponentId: opponent.id,
-      isHome: Math.random() < 0.5,
-      played: false,
-      eliminated: false
-    });
+    G.cupMatches.push({ week, cup, round, opponentId: opponent.id, isHome: Math.random() < 0.5, played: false, eliminated: false });
   });
-  G.cupResults = { fa: { status: "in" }, carabao: { status: "in" }, cl: { status: G.division === "Premier League" ? "in" : "n/a" } };
+  G.cupResults = { fa: { status: "in" }, carabao: { status: "in" } };
+
+  // European competition (new 2024-25 league-phase format)
+  G.currentEuroComp = G.europeanQualification || null;
+  if (G.currentEuroComp) {
+    const cup = G.currentEuroComp;
+    // Setup competition data (participants + schedule)
+    setupEuroCompetitions();
+    const comp = G.euroComp[cup];
+    const mdWeeks = comp.mdWeeks;
+    // Add league phase matchday cup matches
+    mdWeeks.forEach((week, idx) => {
+      // Find user's opponent for this matchday from the schedule
+      const mdRound = comp.mdSchedule[idx];
+      const userEid = comp.userEuroId;
+      let oppEid = null;
+      for (const [h, a] of mdRound) {
+        if (h === userEid) { oppEid = a; break; }
+        if (a === userEid) { oppEid = h; break; }
+      }
+      const oppP = comp.participants.find(p => p.euroId === oppEid);
+      G.cupMatches.push({
+        week, cup, round: `MD${idx + 1}`,
+        opponentId: null, // euro AI — not in G.teams
+        opponentName: oppP ? oppP.name : "—",
+        opponentRating: oppP ? oppP.rating : 75,
+        isHome: Math.random() < 0.5,
+        played: false, eliminated: false,
+        isEuroLP: true, mdIdx: idx
+      });
+    });
+    // Knockout rounds (pre-generated; playoff/R16/QF/SF skipped or eliminated based on LP result)
+    const koRounds = [
+      { round: 'PLAYOFF', week: comp.playoffWeek },
+      { round: 'R16',     week: comp.r16Week },
+      { round: 'QF',      week: comp.qfWeek },
+      { round: 'SF',      week: comp.sfWeek },
+      { round: 'FINAL',   week: comp.finalWeek }
+    ];
+    koRounds.forEach(({ round, week }) => {
+      const oppP = pick(comp.participants.filter(p => !p.isUserTeam));
+      G.cupMatches.push({
+        week, cup, round,
+        opponentId: null,
+        opponentName: oppP ? oppP.name : "—",
+        opponentRating: oppP ? oppP.rating : 75,
+        isHome: Math.random() < 0.5,
+        played: false, eliminated: round !== 'PLAYOFF' && round !== 'R16', // Only playoff alive initially for 9-24
+        isEuroKO: true
+      });
+    });
+    // Enable R16 for user (will be adjusted after LP evaluation)
+    // For now assume top 8 path — eliminate playoff, keep R16 live
+    // This gets corrected by evaluateEuroLeaguePhase() after the last MD
+    G.cupMatches.filter(m => m.cup === cup && m.round === 'PLAYOFF').forEach(m => m.eliminated = true);
+    G.cupMatches.filter(m => m.cup === cup && m.round === 'R16').forEach(m => m.eliminated = false);
+    G.cupResults[cup] = { status: 'in' };
+    addMessage("Board", `We're in the ${CUP_INFO[cup].name} this season! European nights await.`);
+  }
 }
 
 const CUP_INFO = {
-  fa:      { name: "FA CUP",                 cls: "cup-fa" },
-  carabao: { name: "CARABAO CUP",            cls: "cup-carabao" },
-  cl:      { name: "UEFA CHAMPIONS LEAGUE",  cls: "cup-cl" },
-  el:      { name: "UEFA EUROPA LEAGUE",     cls: "cup-el" },
-  conf:    { name: "UEFA CONFERENCE LEAGUE", cls: "cup-conf" }
+  fa:      { name: "FA CUP",                      cls: "cup-fa" },
+  carabao: { name: "CARABAO CUP",                 cls: "cup-carabao" },
+  cl:      { name: "UEFA CHAMPIONS LEAGUE",        cls: "cup-cl" },
+  el:      { name: "UEFA EUROPA LEAGUE",           cls: "cup-el" },
+  conf:    { name: "UEFA CONFERENCE LEAGUE",       cls: "cup-conf" },
+  uecl:    { name: "UEFA CONFERENCE LEAGUE",       cls: "cup-conf" }
 };
+function euroRoundLabel(round) {
+  if (/^MD\d+$/.test(round)) return `Matchday ${round.slice(2)} — League Phase`;
+  if (round === 'PLAYOFF') return 'Knockout Playoff Round';
+  if (round === 'R16') return 'Round of 16';
+  if (round === 'QF') return 'Quarter-Final';
+  if (round === 'SF') return 'Semi-Final';
+  if (round === 'FINAL') return 'Final';
+  return round;
+}
 
 function getCupMatchForWeek(week) {
   return (G.cupMatches || []).find(m => m.week === week && !m.eliminated && !m.played);
@@ -2272,6 +2953,7 @@ function renderTab() {
     case "standings": renderStandings(); break;
     case "roster": renderRoster(); break;
     case "inbox": renderInbox(); break;
+    case "settings": renderSettings(); break;
   }
   renderGameHeader();
 }
@@ -2302,7 +2984,7 @@ function renderAdvance() {
     <div class="cup-banner ${CUP_INFO[cupMatch.cup].cls}">
       <div>
         <div class="cup-name">${CUP_INFO[cupMatch.cup].name}</div>
-        <div class="cup-round">${cupMatch.round} · ${cupMatch.isHome ? "HOME" : "AWAY"} vs ${G.teams[cupMatch.opponentId] ? G.teams[cupMatch.opponentId].name : "—"}</div>
+        <div class="cup-round">${euroRoundLabel ? euroRoundLabel(cupMatch.round) : cupMatch.round} · ${cupMatch.isHome ? "HOME" : "AWAY"} vs ${cupMatch.opponentName || (G.teams[cupMatch.opponentId] ? G.teams[cupMatch.opponentId].name : "—")}</div>
       </div>
       <div style="font-size:24px;">${cupMatch.cup === 'fa' ? '🏆' : cupMatch.cup === 'carabao' ? '🏅' : '⭐'}</div>
     </div>
@@ -2443,11 +3125,12 @@ function renderCalendar() {
     }
   });
 
+  const euroLegendBadge = G.currentEuroComp ? `<span class="cup-banner cup-${G.currentEuroComp}" style="margin:0; padding:4px 8px; font-size:11px;">${CUP_INFO[G.currentEuroComp].name}</span>` : "";
   const cupLegend = `
     <div style="display:flex; gap:8px; flex-wrap:wrap; margin-top:10px;">
       <span class="cup-banner cup-fa" style="margin:0; padding:4px 8px; font-size:11px;">FA CUP</span>
       <span class="cup-banner cup-carabao" style="margin:0; padding:4px 8px; font-size:11px;">CARABAO CUP</span>
-      ${G.division === "Premier League" ? `<span class="cup-banner cup-cl" style="margin:0; padding:4px 8px; font-size:11px;">CHAMPIONS LEAGUE</span>` : ""}
+      ${euroLegendBadge}
     </div>
   `;
 
@@ -2498,7 +3181,7 @@ function renderCalendar() {
             // Cup banner(s) appearing in the same week
             const cupRows = (cupByWeek[week] || []).map(cm => {
               const ci = CUP_INFO[cm.cup];
-              const cOpp = G.teams[cm.opponentId] ? G.teams[cm.opponentId].name : "—";
+              const cOpp = cm.opponentName || (G.teams[cm.opponentId] ? G.teams[cm.opponentId].name : "—");
               let cScore;
               if (cm.played && cm.result) {
                 const myG = cm.isHome ? cm.result.goalsHome : cm.result.goalsAway;
@@ -2621,21 +3304,25 @@ function pickStartingXI(formationKey) {
   const players = G.myPlayers.map(id => G.players[id]).filter(p => p);
   const used = new Set();
   const lineup = [];
-  formation.slots.forEach(slot => {
-    // Find the best player whose primary position group matches any slot.groups
+  formation.slots.forEach((slot, idx) => {
+    const manualId = G.manualSlots && G.manualSlots[idx];
+    if (manualId && G.myPlayers.includes(manualId) && !used.has(manualId)) {
+      used.add(manualId);
+      lineup.push({ slot, player: G.players[manualId] || null, slotIdx: idx });
+      return;
+    }
     const candidates = players.filter(p => !used.has(p.id) && slot.groups.includes(p.position));
     let chosen;
     if (candidates.length) {
       candidates.sort((a, b) => b.rating - a.rating);
       chosen = candidates[0];
     } else {
-      // Fallback: any unused player matching the position group family
       const fallback = players.filter(p => !used.has(p.id));
       fallback.sort((a, b) => b.rating - a.rating);
       chosen = fallback[0] || null;
     }
     if (chosen) used.add(chosen.id);
-    lineup.push({ slot, player: chosen });
+    lineup.push({ slot, player: chosen, slotIdx: idx });
   });
   const subs = players.filter(p => !used.has(p.id)).sort((a, b) => b.rating - a.rating);
   return { lineup, subs };
@@ -2647,6 +3334,7 @@ function renderTeam() {
   const formationKey = G.userFormation;
   const { lineup, subs } = pickStartingXI(formationKey);
   const myTeamRating = teamRating(G.teams[G.userTeamId]);
+  const hasManual = G.manualSlots && Object.keys(G.manualSlots).length > 0;
 
   const formationOptions = Object.keys(FORMATIONS).map(k =>
     `<option value="${k}" ${k === formationKey ? 'selected' : ''}>${k}</option>`
@@ -2670,6 +3358,7 @@ function renderTeam() {
             ${formationOptions}
           </select>
         </div>
+        ${hasManual ? `<button class="btn btn-sm btn-ghost" onclick="clearAllSlots()">Reset to Auto</button>` : ''}
       </div>
     </div>
 
@@ -2677,17 +3366,17 @@ function renderTeam() {
       <div class="pitch">
         <div class="pitch-box top"></div>
         <div class="pitch-box bottom"></div>
-        ${lineup.map(({ slot, player }) => `
-          <div class="pitch-slot" style="left:${slot.x}%; top:${slot.y}%;">
+        ${lineup.map(({ slot, player, slotIdx }) => `
+          <div class="pitch-slot" style="left:${slot.x}%; top:${slot.y}%; cursor:pointer;" onclick="showSlotPicker(${slotIdx})">
             ${player ? `
-              <img src="${player.avatar}" alt="">
+              <img src="${player.avatar}" alt="" style="width:38px;height:38px;border-radius:50%;border:2px solid ${(player.stamina??100)<34?'#da3633':(player.stamina??100)<67?'#d29922':'#2ea043'};">
               <div class="ppos">${slot.role}</div>
               <div class="pname">${player.lastName || player.name}</div>
-              <div class="prating">${player.rating}</div>
+              <div class="prating">${player.rating} <span style="font-size:9px;color:${(player.stamina??100)<34?'#da3633':(player.stamina??100)<67?'#d29922':'#7ee787'}">${Math.round(player.stamina??100)}%</span></div>
             ` : `
-              <div style="width:38px; height:38px; border-radius:50%; border:2px dashed rgba(255,255,255,0.3); margin:0 auto;"></div>
+              <div style="width:38px;height:38px;border-radius:50%;border:2px dashed rgba(255,255,255,0.3);margin:0 auto;" onclick="showSlotPicker(${slotIdx})"></div>
               <div class="ppos">${slot.role}</div>
-              <div class="pname" style="color:#aaa;">(empty)</div>
+              <div class="pname" style="color:#aaa;">(tap to set)</div>
             `}
           </div>
         `).join("")}
@@ -2699,12 +3388,13 @@ function renderTeam() {
       ${subs.length === 0 ? '<div style="color:#8b949e;">No substitutes — your full squad is starting.</div>' : `
         <div class="subs-list">
           ${subs.map(p => `
-            <div class="sub-card">
-              <img src="${p.avatar}" alt="">
-              <div class="info">
+            <div class="sub-card" style="cursor:default;">
+              <img src="${p.avatar}" alt="" style="border-radius:50%;border:2px solid ${(p.stamina??100)<34?'#da3633':(p.stamina??100)<67?'#d29922':'#2ea043'};">
+              <div class="info" style="flex:1;">
                 <div class="nm">${p.name}</div>
-                <div class="mt"><span class="player-pos">${p.position}</span> · Rating ${p.rating}</div>
+                <div class="mt"><span class="player-pos">${p.position}</span> · ${p.rating} · ${Math.round(p.stamina??100)}% stamina</div>
               </div>
+              <button class="btn btn-sm btn-ghost" style="font-size:11px;padding:4px 8px;" onclick="showMoveToStarting(${p.id})">▲ Start</button>
             </div>
           `).join("")}
         </div>
@@ -2712,6 +3402,95 @@ function renderTeam() {
     </div>
   `;
   document.getElementById("tabContent").innerHTML = html;
+}
+
+function showSlotPicker(slotIdx) {
+  const formation = FORMATIONS[G.userFormation || pickBestFormation()];
+  const slot = formation.slots[slotIdx];
+  const { lineup } = pickStartingXI(G.userFormation || pickBestFormation());
+  const usedIds = new Set(lineup.map(l => l.player?.id).filter((id,i) => i !== slotIdx && id != null));
+  const available = G.myPlayers.map(id => G.players[id]).filter(p => p && !usedIds.has(p.id))
+    .sort((a,b) => {
+      const aFit = slot.groups.includes(a.position) ? 1 : 0;
+      const bFit = slot.groups.includes(b.position) ? 1 : 0;
+      return bFit - aFit || b.rating - a.rating;
+    });
+  const currentPlayer = lineup[slotIdx]?.player;
+  const html = `
+    <button class="modal-close" onclick="closeModal()">×</button>
+    <div class="card-title" style="margin-bottom:12px;">Select player for ${slot.role}</div>
+    ${currentPlayer ? `
+      <div style="margin-bottom:10px; padding:8px; background:#21262d; border-radius:6px; display:flex; align-items:center; gap:8px;">
+        <img src="${currentPlayer.avatar}" style="width:36px;height:36px;border-radius:50%;">
+        <span style="color:#8b949e; font-size:12px;">Current: ${currentPlayer.name}</span>
+        <button class="btn btn-sm btn-ghost" style="margin-left:auto;font-size:11px;" onclick="clearSlot(${slotIdx})">Auto-pick</button>
+      </div>
+    ` : ''}
+    <div style="max-height:340px; overflow-y:auto;">
+      ${available.map(p => {
+        const fit = slot.groups.includes(p.position);
+        const st = p.stamina ?? 100;
+        const stClr = st > 66 ? '#2ea043' : st > 33 ? '#d29922' : '#da3633';
+        return `<div onclick="setSlotPlayer(${slotIdx},${p.id})" style="display:flex;align-items:center;gap:10px;padding:8px;cursor:pointer;border-radius:6px;margin-bottom:4px;background:#161b22;border:1px solid ${fit?'#2ea043':'#30363d'};" onmouseover="this.style.background='#21262d'" onmouseout="this.style.background='#161b22'">
+          <img src="${p.avatar}" style="width:40px;height:40px;border-radius:50%;border:2px solid ${stClr};">
+          <div style="flex:1;">
+            <div style="font-weight:600;font-size:13px;">${p.name} ${fit ? '<span style="color:#2ea043;font-size:10px;">✓ natural</span>' : '<span style="color:#8b949e;font-size:10px;">out of pos</span>'}</div>
+            <div style="font-size:11px;color:#8b949e;">${p.position} · ${p.rating} rating · <span style="color:${stClr};">${Math.round(st)}% stamina</span></div>
+          </div>
+        </div>`;
+      }).join("")}
+    </div>
+  `;
+  showModal(html);
+}
+
+function showMoveToStarting(pid) {
+  const p = G.players[pid];
+  if (!p) return;
+  const formation = FORMATIONS[G.userFormation || pickBestFormation()];
+  const html = `
+    <button class="modal-close" onclick="closeModal()">×</button>
+    <div class="card-title" style="margin-bottom:12px;">Move ${p.name} to Starting XI</div>
+    <div style="margin-bottom:10px; display:flex; align-items:center; gap:10px; padding:10px; background:#21262d; border-radius:8px;">
+      <img src="${p.avatar}" style="width:44px;height:44px;border-radius:50%;">
+      <div><div style="font-weight:600;">${p.name}</div><div style="font-size:12px;color:#8b949e;">${p.position} · ${p.rating} rating</div></div>
+    </div>
+    <div style="color:#8b949e;font-size:12px;margin-bottom:8px;">Pick a slot to replace:</div>
+    <div style="max-height:320px;overflow-y:auto;">
+      ${formation.slots.map((slot, idx) => {
+        const { lineup } = pickStartingXI(G.userFormation || pickBestFormation());
+        const cur = lineup[idx]?.player;
+        return `<div onclick="setSlotPlayer(${idx},${pid})" style="display:flex;align-items:center;gap:10px;padding:8px;cursor:pointer;border-radius:6px;margin-bottom:4px;background:#161b22;border:1px solid #30363d;" onmouseover="this.style.background='#21262d'" onmouseout="this.style.background='#161b22'">
+          <div style="width:36px;text-align:center;font-size:11px;color:#8b949e;font-weight:700;">${slot.role}</div>
+          ${cur ? `<img src="${cur.avatar}" style="width:34px;height:34px;border-radius:50%;"><div style="font-size:12px;">${cur.name} <span style="color:#8b949e;">(${cur.rating})</span></div>` : `<div style="font-size:12px;color:#8b949e;">(empty)</div>`}
+        </div>`;
+      }).join("")}
+    </div>
+  `;
+  showModal(html);
+}
+
+function setSlotPlayer(slotIdx, playerId) {
+  if (!G.manualSlots) G.manualSlots = {};
+  // Remove this player from any other manual slot
+  Object.keys(G.manualSlots).forEach(k => { if (G.manualSlots[k] === playerId) delete G.manualSlots[k]; });
+  G.manualSlots[slotIdx] = playerId;
+  saveGame();
+  closeModal();
+  renderTeam();
+}
+
+function clearSlot(slotIdx) {
+  if (G.manualSlots) delete G.manualSlots[slotIdx];
+  saveGame();
+  closeModal();
+  renderTeam();
+}
+
+function clearAllSlots() {
+  G.manualSlots = {};
+  saveGame();
+  renderTeam();
 }
 
 function setFormation(key) {
@@ -2729,6 +3508,8 @@ function validateGameState() {
   if (!G.fixtures) G.fixtures = {};
   if (!G.standings) G.standings = {};
   if (!G.results) G.results = [];
+  if (!G.euroLeagues) setupEuropeanLeagues();
+  if (!G.euroComp && G.currentEuroComp) setupEuroCompetitions();
   if (!G.messages) G.messages = [];
   if (!G.awards) G.awards = [];
   if (!G.incomingBids) G.incomingBids = [];
@@ -2751,7 +3532,9 @@ function validateGameState() {
   G.myPlayers.forEach(id => {
     if (!G.playerStats[id]) G.playerStats[id] = { apps:0, goals:0, assists:0, cleanSheets:0, rating:6.5 };
     if (!G.careerStats[id]) G.careerStats[id] = { apps:0, goals:0, assists:0, cleanSheets:0 };
+    if (G.players[id] && G.players[id].stamina === undefined) G.players[id].stamina = 100;
   });
+  if (!G.manualSlots) G.manualSlots = {};
   // Same for every AI player still on a team
   Object.values(G.teams).forEach(t => {
     (t.players || []).forEach(id => {
@@ -2800,7 +3583,9 @@ function showMatchModal(r, cupCtx) {
   const isHome = r.homeId === G.userTeamId;
   const my = isHome ? r.goalsHome : r.goalsAway;
   const them = isHome ? r.goalsAway : r.goalsHome;
-  const opp = isHome ? G.teams[r.awayId].name : G.teams[r.homeId].name;
+  // Euro AI match — opponent not in G.teams
+  const opp = r.euroOpponentName
+    || (isHome ? (G.teams[r.awayId] ? G.teams[r.awayId].name : "—") : (G.teams[r.homeId] ? G.teams[r.homeId].name : "—"));
   const myName = G.teams[G.userTeamId].name;
   const myScorers = isHome ? r.homeScorers : r.awayScorers;
   const theirScorers = isHome ? r.awayScorers : r.homeScorers;
@@ -3267,19 +4052,37 @@ function completeScouting() {
 function renderStandings() {
   const sub = currentSubTab.standings || "your";
   currentSubTab.standings = sub;
-  let division;
-  if (sub === "your") division = G.division;
-  else if (sub === "pl") division = "Premier League";
-  else if (sub === "ch") division = "Championship";
-  else division = "League One";
+  const euroSubtabs = Object.keys(EURO_LEAGUE_DATA).map(ln => {
+    const key = 'euro_' + ln.replace(/\s+/g,'_');
+    return `<button class="subtab ${sub===key?'active':''}" onclick="setSubTab('standings','${key}')">${EURO_LEAGUE_DATA[ln].flag} ${ln}</button>`;
+  }).join("");
+  const euroCompSub = `<button class="subtab ${sub==='eurocomp'?'active':''}" onclick="setSubTab('standings','eurocomp')">⭐ EUROPEAN CUPS</button>`;
+  let body = "";
+  if (sub === "your" || sub === "pl" || sub === "ch" || sub === "l1") {
+    let division;
+    if (sub === "your") division = G.division;
+    else if (sub === "pl") division = "Premier League";
+    else if (sub === "ch") division = "Championship";
+    else division = "League One";
+    body = renderStandingsTable(division);
+  } else if (sub === "eurocomp") {
+    body = renderEuroCompetitionsStandings();
+  } else if (sub.startsWith("euro_")) {
+    const ln = sub.replace("euro_","").replace(/_/g," ");
+    // Find exact key
+    const realKey = Object.keys(EURO_LEAGUE_DATA).find(k => k.replace(/\s+/g,'_') === sub.replace("euro_",""));
+    body = renderEuroLeagueTable(realKey || ln);
+  }
   document.getElementById("tabContent").innerHTML = `
     <div class="subtab-bar">
       <button class="subtab ${sub==='your'?'active':''}" onclick="setSubTab('standings','your')">YOUR LEAGUE</button>
       <button class="subtab ${sub==='pl'?'active':''}" onclick="setSubTab('standings','pl')">PREMIER LEAGUE</button>
       <button class="subtab ${sub==='ch'?'active':''}" onclick="setSubTab('standings','ch')">CHAMPIONSHIP</button>
       <button class="subtab ${sub==='l1'?'active':''}" onclick="setSubTab('standings','l1')">LEAGUE ONE</button>
+      ${euroSubtabs}
+      ${euroCompSub}
     </div>
-    <div id="standingsBody">${renderStandingsTable(division)}</div>
+    <div id="standingsBody">${body}</div>
   `;
 }
 
@@ -3293,8 +4096,8 @@ function renderStandingsTable(division) {
   });
   let promoZone, playoffZone, relegZone;
   if (division === "Premier League") {
-    promoZone = [0, 1, 2, 3];
-    playoffZone = [4];
+    promoZone = [0, 1, 2, 3]; // CL
+    playoffZone = [4, 5, 6];  // EL (4-5) + UECL (6)
     relegZone = [17, 18, 19];
   } else if (division === "Championship") {
     promoZone = [0, 1];
@@ -3330,11 +4133,96 @@ function renderStandingsTable(division) {
       </table>
     </div>
     <div style="display:flex; gap:14px; margin-top:10px; flex-wrap:wrap; font-size:11px; color:#8b949e;">
-      <span><span style="display:inline-block; width:12px; height:12px; background:rgba(35,134,54,0.5); border-radius:2px; vertical-align:middle;"></span> Promotion</span>
-      <span><span style="display:inline-block; width:12px; height:12px; background:rgba(210,153,34,0.5); border-radius:2px; vertical-align:middle;"></span> Playoffs</span>
+      <span><span style="display:inline-block; width:12px; height:12px; background:rgba(35,134,54,0.5); border-radius:2px; vertical-align:middle;"></span> ${division === "Premier League" ? "Champions League (Top 4)" : "Promotion"}</span>
+      <span><span style="display:inline-block; width:12px; height:12px; background:rgba(210,153,34,0.5); border-radius:2px; vertical-align:middle;"></span> ${division === "Premier League" ? "Europa League (5th-6th) / Conference League (7th)" : "Playoffs"}</span>
       <span><span style="display:inline-block; width:12px; height:12px; background:rgba(218,54,51,0.5); border-radius:2px; vertical-align:middle;"></span> Relegation</span>
     </div>
   `;
+}
+
+// --- EUROPEAN LEAGUE TABLE ---
+function renderEuroLeagueTable(leagueName) {
+  if (!G.euroLeagues) setupEuropeanLeagues();
+  const lg = G.euroLeagues[leagueName];
+  if (!lg) return `<div class="card" style="color:#8b949e;">No data for ${leagueName}</div>`;
+  const data = EURO_LEAGUE_DATA[leagueName];
+  const list = Object.values(lg.standings).sort((a,b) => b.pts - a.pts || (b.gf-b.ga)-(a.gf-a.ga) || b.gf - a.gf);
+  const clEnd = data.clSpots - 1;
+  const elEnd = data.clSpots + data.elSpots - 1;
+  const ueclEnd = data.clSpots + data.elSpots + data.ueclSpots - 1;
+  const relegStart = list.length - 3;
+  let rows = list.map((s, i) => {
+    let cls = "";
+    let badge = "";
+    if (i <= clEnd) { cls = "promotion"; badge = `<span style="color:#1a73e8;font-size:10px;font-weight:700;margin-left:4px;">CL</span>`; }
+    else if (i <= elEnd) { cls = "playoff"; badge = `<span style="color:#ef6c00;font-size:10px;font-weight:700;margin-left:4px;">EL</span>`; }
+    else if (i <= ueclEnd) { badge = `<span style="color:#388e3c;font-size:10px;font-weight:700;margin-left:4px;">UECL</span>`; }
+    else if (i >= relegStart) cls = "relegation";
+    const gd = s.gf - s.ga;
+    return `<tr class="${cls}"><td>${i+1}</td><td>${s.name}${badge}</td><td>${s.p}</td><td>${s.w}</td><td>${s.d}</td><td>${s.l}</td><td>${s.gf}</td><td>${s.ga}</td><td>${gd>0?'+':''}${gd}</td><td><b>${s.pts}</b></td></tr>`;
+  }).join("");
+  return `
+    <div class="card" style="padding:0 0 4px 0; overflow-x:auto;">
+      <div style="padding:12px 16px 8px; font-size:15px; font-weight:700; color:#d29922;">${data.flag} ${leagueName} — ${data.country}</div>
+      <table class="standings">
+        <thead><tr><th>#</th><th>Team</th><th>P</th><th>W</th><th>D</th><th>L</th><th>GF</th><th>GA</th><th>GD</th><th>Pts</th></tr></thead>
+        <tbody>${rows}</tbody>
+      </table>
+    </div>
+    <div style="display:flex; gap:14px; margin-top:10px; flex-wrap:wrap; font-size:11px; color:#8b949e;">
+      <span><span style="display:inline-block;width:12px;height:12px;background:rgba(35,134,54,0.5);border-radius:2px;vertical-align:middle;"></span> Champions League (top ${data.clSpots})</span>
+      <span><span style="display:inline-block;width:12px;height:12px;background:rgba(210,153,34,0.5);border-radius:2px;vertical-align:middle;"></span> Europa League</span>
+      <span style="color:#388e3c;">UECL = Conference League spot</span>
+      <span><span style="display:inline-block;width:12px;height:12px;background:rgba(218,54,51,0.5);border-radius:2px;vertical-align:middle;"></span> Relegation</span>
+    </div>
+    <div style="color:#8b949e;font-size:12px;margin-top:8px;padding:0 4px;">Teams earn European qualification each season based on final standings. Qualified teams appear next season in CL/EL/UECL.</div>
+  `;
+}
+
+// --- EUROPEAN COMPETITION STANDINGS ---
+function renderEuroCompetitionsStandings() {
+  if (!G.euroComp) {
+    return `<div class="card" style="color:#8b949e; text-align:center;">European competition data not available yet. Qualify for European football through the Premier League!</div>`;
+  }
+  let html = "";
+  ['cl','el','uecl'].forEach(key => {
+    const comp = G.euroComp[key];
+    const info = CUP_INFO[key];
+    if (!comp) return;
+    const list = Object.values(comp.standings).sort((a,b) => b.pts-a.pts || (b.gf-b.ga)-(a.gf-a.ga) || b.gf - a.gf);
+    const mdCount = comp.mdCount;
+    const mdsDone = comp.mdPlayed;
+    const rows = list.map((s, i) => {
+      let cls = "";
+      if (i < 8) cls = "promotion";
+      else if (i < 24) cls = "playoff";
+      else cls = "relegation";
+      if (comp.userIn && s.euroId === comp.userEuroId) cls = "you";
+      const gd = s.gf - s.ga;
+      const badge = i < 8 ? '→R16' : i < 24 ? '→Playoff' : '✗';
+      return `<tr class="${cls}"><td>${i+1}</td><td>${s.name}<span style="font-size:10px;color:#8b949e;margin-left:4px;">${s.league||""}</span></td><td>${s.p}</td><td>${s.w}</td><td>${s.d}</td><td>${s.l}</td><td>${s.gf}</td><td>${s.ga}</td><td>${gd>0?'+':''}${gd}</td><td><b>${s.pts}</b></td><td style="font-size:10px;color:#8b949e;">${badge}</td></tr>`;
+    }).join("");
+    html += `
+      <div class="cup-banner ${info.cls}" style="margin-bottom:0; border-radius:8px 8px 0 0; font-size:13px; padding:10px 14px;">
+        <span class="cup-name">${info.name} — League Phase (${mdsDone}/${mdCount} matchdays played)</span>
+        ${comp.userIn ? `<span style="font-size:11px; background:rgba(255,255,255,0.2); padding:2px 8px; border-radius:4px;">YOUR CLUB IN COMP</span>` : ""}
+      </div>
+      <div class="card" style="padding:0; overflow-x:auto; border-radius:0 0 8px 8px; margin-bottom:16px;">
+        <table class="standings">
+          <thead><tr><th>#</th><th>Club</th><th>P</th><th>W</th><th>D</th><th>L</th><th>GF</th><th>GA</th><th>GD</th><th>Pts</th><th>Next</th></tr></thead>
+          <tbody>${rows}</tbody>
+        </table>
+      </div>
+    `;
+  });
+  html += `
+    <div style="display:flex;gap:14px;flex-wrap:wrap;font-size:11px;color:#8b949e;margin-top:4px;">
+      <span><span style="display:inline-block;width:12px;height:12px;background:rgba(35,134,54,0.5);border-radius:2px;vertical-align:middle;"></span> Top 8 → R16</span>
+      <span><span style="display:inline-block;width:12px;height:12px;background:rgba(210,153,34,0.5);border-radius:2px;vertical-align:middle;"></span> 9th–24th → Playoff</span>
+      <span><span style="display:inline-block;width:12px;height:12px;background:rgba(218,54,51,0.5);border-radius:2px;vertical-align:middle;"></span> 25th–36th → Eliminated</span>
+    </div>
+  `;
+  return html;
 }
 
 // --- ROSTER TAB ---
@@ -3350,6 +4238,19 @@ function renderRoster() {
   `;
   if (sub === "players") renderRosterPlayers();
   else renderRosterCoaches();
+}
+
+function staminaBar(stamina) {
+  const st = stamina ?? 100;
+  const clr = st > 66 ? '#2ea043' : st > 33 ? '#d29922' : '#da3633';
+  const label = st > 66 ? 'Fresh' : st > 33 ? 'Tired' : 'Exhausted';
+  return `<div style="margin-top:4px; display:flex; align-items:center; gap:6px;">
+    <div style="font-size:10px; color:#8b949e; width:20px;">${Math.round(st)}%</div>
+    <div style="flex:1; height:5px; background:#21262d; border-radius:3px; overflow:hidden;">
+      <div style="width:${st}%; height:100%; background:${clr}; border-radius:3px; transition:width 0.3s;"></div>
+    </div>
+    <div style="font-size:10px; color:${clr}; width:58px; text-align:right;">${label}</div>
+  </div>`;
 }
 
 function renderRosterPlayers() {
@@ -3372,6 +4273,7 @@ function renderRosterPlayers() {
           <div class="player-meta"><span class="player-pos">${p.position}</span> ${p.age} · ${p.nationality}</div>
           ${starsHTML(p.rating)}
           <div class="player-meta" style="margin-top:4px;">Apps: ${s.apps} · G: ${s.goals} · A: ${s.assists} · Rating: ${s.rating.toFixed(2)}</div>
+          ${staminaBar(p.stamina)}
         </div>
       </div>
     `;
@@ -3404,6 +4306,7 @@ function showPlayerDetail(pid) {
     <div class="stat-row"><span>Wage</span><span>${fmtMoney(p.wage)}/wk</span></div>
     <div class="stat-row"><span>Contract</span><span>${p.contractYears} years</span></div>
     <div class="stat-row"><span>Morale</span><span>${p.morale}${p.moraleBoostWeeks>0?' (boosted '+p.moraleBoostWeeks+'w)':''}</span></div>
+    <div class="stat-row"><span>Stamina</span><span style="color:${(p.stamina??100)>66?'#2ea043':(p.stamina??100)>33?'#d29922':'#da3633'}">${Math.round(p.stamina??100)}%</span></div>
     <div class="card-title" style="margin-top:14px;">This Season</div>
     <div class="stat-row"><span>Apps</span><span>${s.apps}</span></div>
     <div class="stat-row"><span>Goals</span><span>${s.goals}</span></div>
@@ -3625,6 +4528,7 @@ function renderEndOfSeason() {
       <div style="font-size:24px; font-weight:900; color:#d29922; margin-bottom:8px;">END OF SEASON ${G.season}</div>
       <div style="font-size:18px; color:${resultColor}; margin-bottom:6px;">${resultText}</div>
       <div style="color:#8b949e;">${team.name} · Prize Money: ${fmtMoney(eos.prize)}</div>
+      ${eos.euroQual ? `<div style="margin-top:10px; padding:8px 16px; border-radius:6px; display:inline-block; background:${eos.euroQual==='cl'?'rgba(40,53,147,0.4)':eos.euroQual==='el'?'rgba(239,108,0,0.3)':'rgba(56,142,60,0.3)'}; color:#fff; font-weight:700; font-size:14px;">⭐ QUALIFIED: ${CUP_INFO[eos.euroQual].name} next season!</div>` : ""}
     </div>
 
     <div class="card">
@@ -3694,6 +4598,122 @@ function closeModal() {
 document.getElementById("modal").addEventListener("click", (e) => {
   if (e.target.id === "modal") closeModal();
 });
+
+// --- SETTINGS TAB ---
+function renderSettings() {
+  const team = G.teams[G.userTeamId];
+  const lastSaved = (() => {
+    try {
+      const raw = localStorage.getItem("footballCEO_save");
+      if (!raw) return "Never";
+      const d = JSON.parse(raw);
+      return `Season ${d.season}, Week ${d.week} — ${d.teams[d.userTeamId]?.name || ""}`;
+    } catch { return "Unknown"; }
+  })();
+  document.getElementById("tabContent").innerHTML = `
+    <div style="max-width:560px; margin:0 auto;">
+
+      <div class="card">
+        <div class="card-title">💾 Save Game</div>
+        <div style="color:#8b949e; font-size:13px; margin-bottom:14px;">
+          Your game auto-saves after every week, but you can manually save here at any time.
+          Use Export to keep a backup file you can reload later even if you clear browser data.
+        </div>
+        <div class="stat-row"><span>Last Save</span><span style="color:#2ea043;">${lastSaved}</span></div>
+        <div style="display:flex; gap:10px; flex-wrap:wrap; margin-top:14px;">
+          <button class="btn btn-gold" onclick="manualSave()">Save Now</button>
+          <button class="btn btn-ghost" onclick="exportSave()">Export Save File</button>
+          <label class="btn btn-ghost" style="cursor:pointer;">
+            Import Save File
+            <input type="file" accept=".json" style="display:none;" onchange="importSave(this)">
+          </label>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">🗑️ Reset</div>
+        <div style="color:#8b949e; font-size:13px; margin-bottom:14px;">
+          Start a completely fresh career. This cannot be undone — export your save first if you want to keep it.
+        </div>
+        <button class="btn btn-red" onclick="confirmReset()">Start New Career</button>
+      </div>
+
+      <div class="card">
+        <div class="card-title">ℹ️ About</div>
+        <div class="stat-row"><span>Game</span><span>Football CEO</span></div>
+        <div class="stat-row"><span>Season</span><span>${G.season}</span></div>
+        <div class="stat-row"><span>Club</span><span>${team ? team.name : "—"}</span></div>
+        <div class="stat-row"><span>Division</span><span>${G.division}</span></div>
+        <div class="stat-row"><span>Week</span><span>${G.week}</span></div>
+        <div class="stat-row"><span>Budget</span><span>${fmtMoney(G.budget)}</span></div>
+      </div>
+
+    </div>
+  `;
+}
+
+function manualSave() {
+  saveGame();
+  toast("Game saved!", "gold");
+  renderSettings();
+}
+
+function exportSave() {
+  try {
+    const data = localStorage.getItem("footballCEO_save");
+    if (!data) { toast("Nothing to export — save first!", "error"); return; }
+    const blob = new Blob([data], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    const team = G.teams[G.userTeamId];
+    a.href = url;
+    a.download = `football-ceo-${team ? team.name.replace(/\s+/g,"-").toLowerCase() : "save"}-s${G.season}w${G.week}.json`;
+    a.click();
+    URL.revokeObjectURL(url);
+    toast("Save file downloaded!", "gold");
+  } catch (e) { toast("Export failed: " + e.message, "error"); }
+}
+
+function importSave(input) {
+  const file = input.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    try {
+      const parsed = JSON.parse(e.target.result);
+      if (!parsed.userTeamId || !parsed.teams) throw new Error("Invalid save file");
+      localStorage.setItem("footballCEO_save", e.target.result);
+      G = parsed;
+      toast("Save loaded! Refreshing…", "gold");
+      setTimeout(() => { showScreen("game"); renderGameHeader(); switchTab("advance"); }, 800);
+    } catch (err) { toast("Invalid save file: " + err.message, "error"); }
+  };
+  reader.readAsText(file);
+  input.value = "";
+}
+
+function confirmReset() {
+  const html = `
+    <button class="modal-close" onclick="closeModal()">×</button>
+    <div class="card-title" style="color:#da3633;">Start New Career?</div>
+    <div style="color:#8b949e; font-size:14px; margin:12px 0 20px;">
+      All progress will be deleted. Export your save first if you want to keep it.
+    </div>
+    <div style="display:flex; gap:10px; justify-content:flex-end;">
+      <button class="btn btn-ghost" onclick="closeModal()">Cancel</button>
+      <button class="btn btn-red" onclick="hardReset()">Delete &amp; Restart</button>
+    </div>
+  `;
+  showModal(html);
+}
+
+function hardReset() {
+  localStorage.removeItem("footballCEO_save");
+  closeModal();
+  G = null;
+  showScreen("welcome");
+  initWelcome();
+}
 
 // --- INIT ---
 initWelcome();
