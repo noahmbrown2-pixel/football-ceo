@@ -2198,7 +2198,10 @@ function simulateWeek() {
                 (userResult.awayId === G.userTeamId && userResult.goalsAway > userResult.goalsHome);
     const lost = (userResult.homeId === G.userTeamId && userResult.goalsHome < userResult.goalsAway) ||
                  (userResult.awayId === G.userTeamId && userResult.goalsAway < userResult.goalsHome);
-    if (won) addMessage("Fans","The supporters are buzzing after that win! Keep it up.");
+    if (won) {
+      G.budget += 5e6;
+      addMessage("Fans","The supporters are buzzing after that win! Keep it up. +£5M prize money!");
+    }
     else if (lost) addMessage("Fans","Tough loss. The faithful are hoping for a bounceback.");
   }
   if (Math.random() < 0.05) addMessage("Board","The board is monitoring your performance closely.");
@@ -2606,7 +2609,7 @@ function renderTeamSelect() {
       <div class="name">${t.name}</div>
       <div class="city">${t.city}</div>
       <div class="fact">${t.fact}</div>
-      <div class="budget">Starting Budget: £150M</div>
+      <div class="budget">Starting Budget: £1B</div>
     </div>
   `).join("");
 }
@@ -2614,7 +2617,7 @@ function renderTeamSelect() {
 function selectTeam(teamId) {
   G.userTeamId = teamId;
   const team = G.teams[teamId];
-  G.budget = 150e6; // Starting budget: £150M
+  G.budget = 1e9; // Starting budget: £1B
   G.division = "Championship";
   // Build AI squads for ALL teams except user
   Object.values(G.teams).forEach(t => {
